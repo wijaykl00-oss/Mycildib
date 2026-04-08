@@ -73,8 +73,8 @@ const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
           </motion.div>
         </div>
 
-        <h1 className="text-2xl font-bold text-pink-800 mb-2">Selamat Datang</h1>
-        <p className="text-pink-600 mb-8">Silakan masukkan nickname kamu untuk melanjutkan</p>
+        <h1 className="text-2xl font-bold text-pink-800 mb-2">Welcome my favorite person</h1>
+        <p className="text-pink-600 mb-8">Hanya nama orang terpilih</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
