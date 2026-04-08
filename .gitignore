@@ -1,4 +1,4 @@
-node_modules/
+it push -u origin mainnode_modules/
 build/
 dist/
 coverage/

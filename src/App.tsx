@@ -153,19 +153,46 @@ const LoveExplosion = () => {
 const NailongTapGame = () => {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'idle' | 'playing' | 'cracked' | 'won'>('idle');
+  const [items, setItems] = useState<{ id: number; type: string; left: number }[]>([]);
 
+  // Spawn items
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (status === 'playing') {
+      let idCounter = 0;
+      timer = setInterval(() => {
+        const rand = Math.random();
+        let type = '🦖';
+        if (rand > 0.8) type = '💣';
+        else if (rand > 0.6) type = '💖';
+
+        setItems((prev) => [
+          ...prev,
+          {
+            id: idCounter++,
+            type,
+            left: Math.random() * 80 + 10, // 10% to 90%
+          },
+        ]);
+      }, 600); // spawned every 600ms
+    }
+    return () => clearInterval(timer);
+  }, [status]);
+
+  // Natural Drain
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (status === 'playing') {
       timer = setInterval(() => {
         setProgress((prev) => {
-          const next = prev - 2;
+          const next = prev - 0.8; // -8% per second
           if (next <= 0) {
             setStatus('cracked');
             setTimeout(() => {
               setStatus('idle');
               setProgress(0);
-            }, 2000);
+              setItems([]);
+            }, 2500);
             return 0;
           }
           return next;
@@ -175,91 +202,126 @@ const NailongTapGame = () => {
     return () => clearInterval(timer);
   }, [status]);
 
-  const handleTap = () => {
-    if (status === 'cracked' || status === 'won') return;
-    if (status === 'idle') setStatus('playing');
-    
+  const startGame = () => {
+    setStatus('playing');
+    setProgress(15); // Buffer start
+  };
+
+  const handleTapItem = (id: number, type: string) => {
+    if (status !== 'playing') return;
+
+    // Remove tapped item immediately
+    setItems((prev) => prev.filter((item) => item.id !== id));
+
     setProgress((prev) => {
-      const next = prev + 15;
+      let next = prev;
+      if (type === '🦖') next += 10;
+      else if (type === '💖') next += 15;
+      else if (type === '💣') next -= 20;
+
       if (next >= 100) {
         setStatus('won');
+        setItems([]);
         return 100;
+      }
+      if (next <= 0) {
+        setStatus('cracked');
+        setTimeout(() => {
+          setStatus('idle');
+          setProgress(0);
+          setItems([]);
+        }, 2500);
+        return 0;
       }
       return next;
     });
   };
 
+  const handleAnimationComplete = (id: number) => {
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
   return (
-    <div className="w-full max-w-sm mx-auto bg-white/60 backdrop-blur-md rounded-[3rem] p-8 shadow-xl border-4 border-pink-200 flex flex-col items-center gap-6 relative overflow-hidden my-20">
-      <h3 className="text-4xl font-bold text-pink-600 text-center drop-shadow-sm" style={{ fontFamily: "'Dancing Script', cursive" }}>
-        Tap Tap Hati!
+    <div className="w-full max-w-md mx-auto bg-white/60 backdrop-blur-md rounded-[3rem] p-6 shadow-xl border-4 border-pink-200 flex flex-col items-center gap-6 relative overflow-hidden my-16 h-[450px]">
+      <h3 className="text-3xl z-10 font-bold text-pink-600 text-center drop-shadow-sm mt-2" style={{ fontFamily: "'Dancing Script', cursive" }}>
+        Tangkap Cinta!
       </h3>
-      
-      {/* Visualizer / Mascot */}
-      <div className="relative w-32 h-32 flex items-center justify-center">
-        {status === 'won' ? (
-          <motion.div 
-            initial={{ scale: 0 }} 
-            animate={{ scale: [1, 1.2, 1] }} 
-            transition={{ repeat: Infinity, duration: 1 }}
-            className="text-7xl flex items-center gap-2 drop-shadow-lg"
-          >
-            💕
-          </motion.div>
-        ) : status === 'cracked' ? (
-          <motion.div 
-            initial={{ rotate: -20, opacity: 0, scale: 0.5 }} 
-            animate={{ rotate: 0, opacity: 1, scale: 1, y: [0, 10] }} 
-            className="text-7xl drop-shadow-lg"
-          >
-            💔
-          </motion.div>
-        ) : (
-          <motion.button 
-            onClick={handleTap}
-            whileTap={{ scale: 0.85 }}
-            className="text-8xl focus:outline-none drop-shadow-2xl select-none hover:scale-110 transition-transform"
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            <motion.div
-               animate={status === 'playing' ? { rotate: [-15, 15, -15] } : { y: [0, -10, 0] }}
-               transition={{ repeat: Infinity, duration: status === 'playing' ? 0.2 : 2.5 }}
+      <p className="text-xs text-pink-500 font-bold -mt-4 z-10 opacity-70">Awas Bom! Jangan sampai habis!</p>
+
+      {/* Game Area Boundary */}
+      <div className="absolute inset-0 top-20 bottom-0 w-full overflow-hidden">
+        {status === 'playing' &&
+          items.map((item) => (
+            <motion.button
+              key={item.id}
+              onClick={() => handleTapItem(item.id, item.type)}
+              className="absolute text-5xl md:text-6xl cursor-pointer drop-shadow-md select-none z-20 hover:scale-110 active:scale-90"
+              style={{ left: `${item.left}%`, WebkitTapHighlightColor: 'transparent' }}
+              initial={{ y: -80, rotate: -30 }}
+              animate={{ y: 500, rotate: 30 }}
+              transition={{ duration: 2.8, ease: 'linear' }}
+              onAnimationComplete={() => handleAnimationComplete(item.id)}
             >
-              🦖
-            </motion.div>
-          </motion.button>
-        )}
+              {item.type}
+            </motion.button>
+          ))}
       </div>
 
-      {/* Progress Bar Container */}
-      <div className="w-full h-8 bg-pink-100 rounded-full overflow-hidden border-[3px] border-white shadow-inner relative">
-        <motion.div 
-          className="h-full bg-gradient-to-r from-pink-300 via-pink-400 to-pink-600 shadow-md"
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ type: "tween", duration: 0.1 }}
-        />
-        <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow">
-          {Math.floor(progress)}%
-        </div>
-      </div>
-
-      <div className="text-sm font-bold text-pink-500 text-center tracking-wide h-6">
-        {status === 'idle' && "Tap ngebut biar penuh!"}
-        {status === 'playing' && "Ayo cepat! Hatinya bocor!"}
-        {status === 'cracked' && "Yah retak 💔 Semangat lagi!"}
-        {status === 'won' && "Cinta Penuh! Luar Biasa! 💕"}
-      </div>
-      
-      {status === 'won' && (
-        <motion.button 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          onClick={() => { setStatus('idle'); setProgress(0); }}
-          className="px-8 py-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full text-sm mt-2 transition-colors font-bold shadow-lg w-full"
+      {/* Pre-Game State */}
+      {status === 'idle' && (
+        <motion.button
+          onClick={startGame}
+          className="z-30 m-auto px-8 py-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full font-bold shadow-lg shadow-pink-300 animate-bounce"
         >
-          Main Lagi
+          Mulai Main!
         </motion.button>
+      )}
+
+      {/* Post-Game States */}
+      {(status === 'cracked' || status === 'won') && (
+        <div className="absolute inset-0 z-30 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
+          {status === 'won' ? (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1.2 }} className="text-8xl drop-shadow-xl">
+              💕
+            </motion.div>
+          ) : (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1, rotate: [0, -10, 10, 0] }} className="text-8xl drop-shadow-lg">
+              💔
+            </motion.div>
+          )}
+          <p className="font-bold text-pink-600 mt-6 text-xl tracking-wide max-w-[80%] text-center leading-snug">
+            {status === 'won' ? 'Cinta Penuh! Luar Biasa!' : 'Yah hatinya bocor... Fokus lagi!'}
+          </p>
+          {status === 'won' && (
+            <button
+              onClick={() => {
+                setStatus('idle');
+                setProgress(0);
+              }}
+              className="mt-8 px-6 py-3 bg-pink-500 text-white rounded-full shadow-md font-bold hover:bg-pink-600 shadow-pink-300 transition-all hover:scale-105"
+            >
+              Main Lagi
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Visualizer: Two Hearts Fill System */}
+      {status !== 'won' && status !== 'cracked' && status !== 'idle' && (
+        <div className="z-10 mt-auto mb-2 relative flex items-center justify-center flex-col">
+          <div className="flex gap-4 text-pink-200">
+            <Heart size={72} strokeWidth={2.5} />
+            <Heart size={72} strokeWidth={2.5} />
+          </div>
+          <div
+            className="absolute top-0 flex gap-4 text-pink-500 drop-shadow-md"
+            style={{ clipPath: `inset(calc(100% - ${progress}%) 0 0 0)`, transition: 'clip-path 0.3s ease-out' }}
+          >
+            <Heart size={72} strokeWidth={2.5} fill="currentColor" />
+            <Heart size={72} strokeWidth={2.5} fill="currentColor" />
+          </div>
+          <div className="mt-2 font-bold text-sm text-pink-400 bg-white/40 px-3 py-1 rounded-full shadow-sm">{Math.floor(progress)}%</div>
+        </div>
       )}
     </div>
   );
