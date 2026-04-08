@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Heart, HeartCrack, Music } from 'lucide-react';
+import { Heart, Music } from 'lucide-react';
 
 const FloatingHearts = () => {
   const [hearts, setHearts] = useState<{ id: number; left: number; delay: number; size: number }[]>([]);
@@ -359,8 +359,7 @@ const MainScreen = () => {
     }
   };
 
-  // Pre-defined random rotations for the polaroid cards
-  const rotations = [-8, 5, -4, 7, -6];
+
 
   // Interesting shapes array for the bottom photos
   const shapes = [
