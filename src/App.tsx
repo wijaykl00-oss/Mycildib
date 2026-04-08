@@ -112,8 +112,8 @@ const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
   );
 };
 
-const photos1 = Array.from({ length: 10 }).map((_, i) => `/foto/${i + 1}.jpeg?v=2`);
-const photos2 = Array.from({ length: 10 }).map((_, i) => `/foto/${i + 11}.jpeg?v=2`);
+const topPhotos = Array.from({ length: 5 }).map((_, i) => `/foto/${i + 1}.jpeg?v=2`);
+const bottomPhotos = Array.from({ length: 15 }).map((_, i) => `/foto/${i + 6}.jpeg?v=2`);
 
 const LoveExplosion = () => {
   const particles = Array.from({ length: 40 });
@@ -165,9 +165,7 @@ const MainScreen = () => {
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       const time = audioRef.current.currentTime;
-      if (time >= 63 && scene !== 2) {
-        setScene(2);
-      } else if (time >= 6 && time < 63 && scene !== 1) {
+      if (time >= 6 && scene === 0) {
         setScene(1);
       }
     }
@@ -184,8 +182,20 @@ const MainScreen = () => {
     }
   };
 
+  // Pre-defined random rotations for the polaroid cards
+  const rotations = [-8, 5, -4, 7, -6];
+
+  // Interesting shapes array for the bottom photos
+  const shapes = [
+    { container: "rounded-3xl border-4 border-pink-200", img: "rounded-2xl" }, // Soft rectangle
+    { container: "rounded-full aspect-square border-8 border-white", img: "rounded-full aspect-square" }, // Circle
+    { container: "rounded-tr-[50%] rounded-bl-[50%] rounded-tl-xl rounded-br-xl border-4 border-pink-300 bg-white p-2", img: "rounded-tr-[50%] rounded-bl-[50%] rounded-tl-lg rounded-br-lg" }, // Leaf-like shape
+    { container: "rounded-t-full rounded-b-2xl border-[6px] border-white aspect-[3/4]", img: "rounded-t-full rounded-b-[14px] w-full h-full" }, // Arch shape
+    { container: "rounded-[3rem] border-[10px] border-pink-100 bg-white p-2", img: "rounded-[2.5rem]" }, // Puffy
+  ];
+
   return (
-    <div className="min-h-screen bg-pink-50 text-pink-900 font-sans relative overflow-x-hidden transition-colors duration-1000">
+    <div className={`bg-pink-50 text-pink-900 font-sans relative overflow-x-hidden transition-colors duration-1000 ${scene > 0 ? '' : 'h-screen overflow-hidden'}`}>
       <FloatingHearts />
 
       {/* Background Audio */}
@@ -210,62 +220,86 @@ const MainScreen = () => {
         {scene === 0 && <LoveExplosion />}
       </div>
 
-      {/* SCENE 1 & 2: Photos & Text */}
-      <div className={`max-w-6xl mx-auto px-4 pt-12 pb-24 relative z-10 transition-opacity duration-1000 ${scene > 0 ? 'opacity-100' : 'opacity-0'}`}>
+      {/* SCENE 1: Scrollable Page */}
+      <div className={`relative z-10 transition-opacity duration-1000 ${scene > 0 ? 'opacity-100' : 'opacity-0'}`}>
         
-        {/* Beautiful Text on Scene 2 */}
-        {scene === 2 && (
-          <motion.div 
-            initial={{ opacity: 0, y: -30, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-            className="text-center mb-12 mt-4"
-          >
-            <h2 
-              className="text-5xl md:text-7xl font-bold text-pink-600 drop-shadow-sm px-4" 
-              style={{ fontFamily: "'Dancing Script', cursive", textShadow: "2px 2px 4px rgba(255,192,203,0.6)" }}
-            >
-              Hal terindah yang pernah kutemukan
-            </h2>
-          </motion.div>
-        )}
-
-        <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
-          {(scene === 2 ? photos2 : photos1).map((src, index) => (
-            <motion.div
-              key={`${scene}-${src}`}
-              initial={{ opacity: 0, scale: 0.5, y: 50 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: index * 0.1, type: "spring" }}
-              whileHover={{ scale: 1.05, rotate: index % 2 === 0 ? 3 : -3 }}
-              className="break-inside-avoid relative group"
-            >
-              <img
-                src={src}
-                alt={`Cute ${index}`}
-                className={`w-full object-cover mb-4 transition-all duration-500 shadow-xl
-                  ${scene === 2 
-                    ? "rounded-[3rem] border-[10px] border-pink-100/80 hover:border-pink-300 p-2 bg-gradient-to-br from-white to-pink-50" 
-                    : "rounded-2xl border-4 border-white/50 hover:border-pink-300"
-                  }
-                `}
-              />
-              {scene === 2 && (
-                <div className="absolute -top-3 -right-3 text-pink-500 drop-shadow-md rotate-12 bg-white/50 rounded-full p-2">
-                  <Heart size={28} fill="currentColor" />
+        {/* Top Section: Polaroid Slanted Cards */}
+        <div className="min-h-screen flex flex-col items-center justify-center pt-20 px-4">
+          <div className="flex flex-wrap justify-center gap-6 md:gap-12 relative">
+            {topPhotos.map((src, index) => (
+              <motion.div
+                key={`top-${src}`}
+                initial={{ opacity: 0, y: 100, rotate: rotations[index] - 20 }}
+                animate={{ opacity: 1, y: 0, rotate: rotations[index] }}
+                transition={{ duration: 1, delay: index * 0.2, type: "spring" }}
+                whileHover={{ scale: 1.15, rotate: 0, zIndex: 30 }}
+                className="w-40 h-56 md:w-56 md:h-72 bg-white p-3 pb-12 rounded-sm shadow-2xl relative transition-all duration-300"
+                style={{ zIndex: index }}
+              >
+                <img src={src} className="w-full h-full object-cover shadow-inner bg-gray-100" alt={`Polaroid ${index}`} />
+                <div className="absolute bottom-0 left-0 right-0 h-12 flex items-center justify-center">
+                  <Heart className="text-pink-400 opacity-50 absolute left-3 top-3" size={16} fill="currentColor" />
+                  <span className="font-['Dancing_Script'] text-xl text-pink-600">Terindah</span>
                 </div>
-              )}
-              {scene === 2 && (
-                <div className="absolute -bottom-3 -left-3 text-pink-400 drop-shadow-md -rotate-12 bg-white/50 rounded-full p-1.5">
-                  <Heart size={20} fill="currentColor" />
-                </div>
-              )}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                <Heart className="text-white/80 drop-shadow-lg" size={scene === 2 ? 48 : 32} fill="currentColor" />
-              </div>
-            </motion.div>
-          ))}
+                {/* Vintage tape effect top center */}
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-6 bg-white/40 backdrop-blur-sm shadow-sm rotate-2 flex items-center justify-center"></div>
+              </motion.div>
+            ))}
+          </div>
         </div>
+
+        {/* Large Scroll Space */}
+        <div className="h-[60vh] flex items-center justify-center opacity-50 flex-col gap-4 text-pink-400">
+          <motion.div
+            animate={{ y: [0, 10, 0] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+          >
+            Geser Ke Bawah
+          </motion.div>
+          <div className="w-[2px] h-32 bg-gradient-to-b from-pink-400 to-transparent"></div>
+        </div>
+
+        {/* Middle Text Area */}
+        <div className="text-center px-4 mb-24">
+          <motion.h2 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            className="text-5xl md:text-7xl lg:text-8xl font-bold text-pink-600 drop-shadow-md mx-auto max-w-4xl leading-tight" 
+            style={{ fontFamily: "'Dancing Script', cursive", textShadow: "3px 3px 6px rgba(255,192,203,0.8)" }}
+          >
+            Hal terindah yang pernah kutemukan
+          </motion.h2>
+        </div>
+
+        {/* Bottom Section: Varied Shapes */}
+        <div className="max-w-6xl mx-auto px-4 pb-32">
+          <div className="columns-2 md:columns-3 lg:columns-4 gap-6 space-y-6">
+            {bottomPhotos.map((src, index) => {
+              const style = shapes[index % shapes.length];
+              return (
+                <motion.div
+                  key={`bottom-${src}`}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.8, type: "spring" }}
+                  whileHover={{ scale: 1.05, rotate: index % 2 === 0 ? 2 : -2 }}
+                  className={`break-inside-avoid relative overflow-hidden shadow-xl ${style.container}`}
+                >
+                  <img
+                    src={src}
+                    alt={`Varied ${index}`}
+                    className={`w-full h-full object-cover ${style.img}`}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 bg-pink-500/20 mix-blend-overlay"></div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+        
       </div>
     </div>
   );
