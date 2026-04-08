@@ -223,28 +223,62 @@ const MainScreen = () => {
       {/* SCENE 1: Scrollable Page */}
       <div className={`relative z-10 transition-opacity duration-1000 ${scene > 0 ? 'opacity-100' : 'opacity-0'}`}>
         
-        {/* Top Section: Polaroid Slanted Cards */}
-        <div className="min-h-screen flex flex-col items-center justify-center pt-20 px-4">
-          <div className="flex flex-wrap justify-center gap-6 md:gap-12 relative">
-            {topPhotos.map((src, index) => (
-              <motion.div
-                key={`top-${src}`}
-                initial={{ opacity: 0, y: 100, rotate: rotations[index] - 20 }}
-                animate={{ opacity: 1, y: 0, rotate: rotations[index] }}
-                transition={{ duration: 1, delay: index * 0.2, type: "spring" }}
-                whileHover={{ scale: 1.15, rotate: 0, zIndex: 30 }}
-                className="w-40 h-56 md:w-56 md:h-72 bg-white p-3 pb-12 rounded-sm shadow-2xl relative transition-all duration-300"
-                style={{ zIndex: index }}
-              >
-                <img src={src} className="w-full h-full object-cover shadow-inner bg-gray-100" alt={`Polaroid ${index}`} />
-                <div className="absolute bottom-0 left-0 right-0 h-12 flex items-center justify-center">
-                  <Heart className="text-pink-400 opacity-50 absolute left-3 top-3" size={16} fill="currentColor" />
-                  <span className="font-['Dancing_Script'] text-xl text-pink-600">Terindah</span>
-                </div>
-                {/* Vintage tape effect top center */}
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-6 bg-white/40 backdrop-blur-sm shadow-sm rotate-2 flex items-center justify-center"></div>
-              </motion.div>
-            ))}
+        {/* Top Section: First photos mixed shapes + cute characters */}
+        <div className="min-h-[90vh] flex flex-col items-center justify-center pt-20 px-4 relative">
+          
+          {/* Animated Cute Characters */}
+          {[
+            { char: "🐰", left: "10%", top: "15%", delay: 0 },
+            { char: "🌸", left: "85%", top: "20%", delay: 0.5 },
+            { char: "🧸", left: "15%", top: "70%", delay: 1 },
+            { char: "✨", left: "80%", top: "65%", delay: 1.5 },
+            { char: "🐱", left: "5%", top: "40%", delay: 2 },
+            { char: "🎀", left: "90%", top: "45%", delay: 2.5 },
+          ].map((item, i) => (
+             <motion.div
+               key={`char-${i}`}
+               className="absolute z-0 text-5xl md:text-7xl drop-shadow-md pointer-events-none"
+               initial={{ opacity: 0, scale: 0 }}
+               animate={{ 
+                 opacity: 1, 
+                 scale: 1,
+                 y: [0, -30, 0],
+                 x: [0, 15, -15, 0],
+                 rotate: [0, 15, -15, 0]
+               }}
+               transition={{ 
+                 duration: 4 + (i % 3), 
+                 repeat: Infinity, 
+                 ease: "easeInOut",
+                 delay: item.delay 
+               }}
+               style={{ top: item.top, left: item.left }}
+             >
+                {item.char}
+             </motion.div>
+          ))}
+
+          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 relative z-10 max-w-5xl mx-auto">
+            {topPhotos.map((src, index) => {
+              const style = shapes[(index + 3) % shapes.length];
+              return (
+                <motion.div
+                  key={`top-shape-${src}`}
+                  initial={{ opacity: 0, scale: 0.6, y: 50 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.2, type: "spring" }}
+                  whileHover={{ scale: 1.05, rotate: index % 2 === 0 ? 3 : -3 }}
+                  className={`relative overflow-hidden shadow-xl w-48 h-56 md:w-64 md:h-80 ${style.container}`}
+                >
+                  <img
+                    src={src}
+                    alt={`Varied Top ${index}`}
+                    className={`w-full h-full object-cover ${style.img}`}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 bg-pink-500/20 mix-blend-overlay"></div>
+                </motion.div>
+              )
+            })}
           </div>
         </div>
 
