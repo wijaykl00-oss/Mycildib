@@ -150,6 +150,121 @@ const LoveExplosion = () => {
   );
 };
 
+const NailongTapGame = () => {
+  const [progress, setProgress] = useState(0);
+  const [status, setStatus] = useState<'idle' | 'playing' | 'cracked' | 'won'>('idle');
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (status === 'playing') {
+      timer = setInterval(() => {
+        setProgress((prev) => {
+          const next = prev - 2;
+          if (next <= 0) {
+            setStatus('cracked');
+            setTimeout(() => {
+              setStatus('idle');
+              setProgress(0);
+            }, 2000);
+            return 0;
+          }
+          return next;
+        });
+      }, 100);
+    }
+    return () => clearInterval(timer);
+  }, [status]);
+
+  const handleTap = () => {
+    if (status === 'cracked' || status === 'won') return;
+    if (status === 'idle') setStatus('playing');
+    
+    setProgress((prev) => {
+      const next = prev + 15;
+      if (next >= 100) {
+        setStatus('won');
+        return 100;
+      }
+      return next;
+    });
+  };
+
+  return (
+    <div className="w-full max-w-sm mx-auto bg-white/60 backdrop-blur-md rounded-[3rem] p-8 shadow-xl border-4 border-pink-200 flex flex-col items-center gap-6 relative overflow-hidden my-20">
+      <h3 className="text-4xl font-bold text-pink-600 text-center drop-shadow-sm" style={{ fontFamily: "'Dancing Script', cursive" }}>
+        Tap Tap Hati!
+      </h3>
+      
+      {/* Visualizer / Mascot */}
+      <div className="relative w-32 h-32 flex items-center justify-center">
+        {status === 'won' ? (
+          <motion.div 
+            initial={{ scale: 0 }} 
+            animate={{ scale: [1, 1.2, 1] }} 
+            transition={{ repeat: Infinity, duration: 1 }}
+            className="text-7xl flex items-center gap-2 drop-shadow-lg"
+          >
+            💕
+          </motion.div>
+        ) : status === 'cracked' ? (
+          <motion.div 
+            initial={{ rotate: -20, opacity: 0, scale: 0.5 }} 
+            animate={{ rotate: 0, opacity: 1, scale: 1, y: [0, 10] }} 
+            className="text-7xl drop-shadow-lg"
+          >
+            💔
+          </motion.div>
+        ) : (
+          <motion.button 
+            onClick={handleTap}
+            whileTap={{ scale: 0.85 }}
+            className="text-8xl focus:outline-none drop-shadow-2xl select-none hover:scale-110 transition-transform"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            <motion.div
+               animate={status === 'playing' ? { rotate: [-15, 15, -15] } : { y: [0, -10, 0] }}
+               transition={{ repeat: Infinity, duration: status === 'playing' ? 0.2 : 2.5 }}
+            >
+              🦖
+            </motion.div>
+          </motion.button>
+        )}
+      </div>
+
+      {/* Progress Bar Container */}
+      <div className="w-full h-8 bg-pink-100 rounded-full overflow-hidden border-[3px] border-white shadow-inner relative">
+        <motion.div 
+          className="h-full bg-gradient-to-r from-pink-300 via-pink-400 to-pink-600 shadow-md"
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ type: "tween", duration: 0.1 }}
+        />
+        <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow">
+          {Math.floor(progress)}%
+        </div>
+      </div>
+
+      <div className="text-sm font-bold text-pink-500 text-center tracking-wide h-6">
+        {status === 'idle' && "Tap ngebut biar penuh!"}
+        {status === 'playing' && "Ayo cepat! Hatinya bocor!"}
+        {status === 'cracked' && "Yah retak 💔 Semangat lagi!"}
+        {status === 'won' && "Cinta Penuh! Luar Biasa! 💕"}
+      </div>
+      
+      {status === 'won' && (
+        <motion.button 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => { setStatus('idle'); setProgress(0); }}
+          className="px-8 py-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full text-sm mt-2 transition-colors font-bold shadow-lg w-full"
+        >
+          Main Lagi
+        </motion.button>
+      )}
+    </div>
+  );
+};
+
 const MainScreen = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -333,6 +448,9 @@ const MainScreen = () => {
             })}
           </div>
         </div>
+        
+        {/* Playful Games Section Bottom */}
+        <NailongTapGame />
         
       </div>
     </div>
