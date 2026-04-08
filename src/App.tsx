@@ -256,7 +256,7 @@ const NailongTapGame = () => {
               key={item.id}
               onClick={() => handleTapItem(item.id, item.type)}
               className="absolute text-5xl md:text-6xl cursor-pointer drop-shadow-md select-none z-20 hover:scale-110 active:scale-90"
-              style={{ left: `${item.left}%`, WebkitTapHighlightColor: 'transparent' }}
+              style={{ top: 0, left: `${item.left}%`, WebkitTapHighlightColor: 'transparent' }}
               initial={{ y: -80, rotate: -30 }}
               animate={{ y: 500, rotate: 30 }}
               transition={{ duration: 2.8, ease: 'linear' }}
