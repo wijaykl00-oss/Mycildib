@@ -112,7 +112,7 @@ const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
   );
 };
 
-const photos = Array.from({ length: 20 }).map((_, i) => `/foto/${i + 1}.jpeg`);
+const photos = Array.from({ length: 20 }).map((_, i) => `/foto/${i + 1}.jpeg?v=2`);
 
 const MainScreen = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
