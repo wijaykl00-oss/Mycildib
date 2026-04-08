@@ -112,11 +112,48 @@ const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
   );
 };
 
-const photos = Array.from({ length: 20 }).map((_, i) => `/foto/${i + 1}.jpeg?v=2`);
+const photos1 = Array.from({ length: 10 }).map((_, i) => `/foto/${i + 1}.jpeg?v=2`);
+const photos2 = Array.from({ length: 10 }).map((_, i) => `/foto/${i + 11}.jpeg?v=2`);
+
+const LoveExplosion = () => {
+  const particles = Array.from({ length: 40 });
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-pink-100 overflow-hidden">
+      {particles.map((_, i) => {
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = Math.random() * 40 + 20;
+        const delay = Math.random() * 2;
+        return (
+          <motion.div
+            key={i}
+            className="absolute text-pink-500"
+            initial={{ x: 0, y: 0, opacity: 1, scale: 0.5 }}
+            animate={{
+              x: `${Math.cos(angle) * velocity}vw`,
+              y: `${Math.sin(angle) * velocity}vh`,
+              opacity: [1, 0.8, 0],
+              scale: [0.5, Math.random() * 2 + 1]
+            }}
+            transition={{ duration: 2.5, repeat: Infinity, delay }}
+          >
+            <Heart size={Math.random() * 20 + 10} fill="currentColor" />
+          </motion.div>
+        );
+      })}
+      <motion.div
+        animate={{ scale: [1, 1.4, 1] }}
+        transition={{ repeat: Infinity, duration: 0.6 }}
+      >
+        <Heart size={140} className="text-pink-600 drop-shadow-2xl z-10" fill="currentColor" />
+      </motion.div>
+    </div>
+  );
+};
 
 const MainScreen = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [scene, setScene] = useState(0);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -124,6 +161,17 @@ const MainScreen = () => {
       audioRef.current.play().catch(e => console.log("Autoplay prevented:", e));
     }
   }, []);
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const time = audioRef.current.currentTime;
+      if (time >= 63 && scene !== 2) {
+        setScene(2);
+      } else if (time >= 6 && time < 63 && scene !== 1) {
+        setScene(1);
+      }
+    }
+  };
 
   const toggleAudio = () => {
     if (audioRef.current) {
@@ -137,11 +185,16 @@ const MainScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-pink-50 text-pink-900 font-sans pb-20 relative">
+    <div className="min-h-screen bg-pink-50 text-pink-900 font-sans relative overflow-x-hidden transition-colors duration-1000">
       <FloatingHearts />
 
       {/* Background Audio */}
-      <audio ref={audioRef} src="/music/videoplayback.m4a" loop />
+      <audio 
+        ref={audioRef} 
+        src="/music/videoplayback.m4a" 
+        loop 
+        onTimeUpdate={handleTimeUpdate} 
+      />
 
       {/* Floating Music Controller */}
       <button
@@ -152,25 +205,63 @@ const MainScreen = () => {
         <Music size={24} className={isPlaying ? "animate-pulse" : "opacity-50"} />
       </button>
 
-      <div className="max-w-6xl mx-auto px-4 pt-12 relative z-10">
+      {/* SCENE 0: Love Explosion Intro */}
+      <div className={`fixed inset-0 z-40 transition-opacity duration-1000 ease-in-out pointer-events-none ${scene === 0 ? 'opacity-100' : 'opacity-0'}`}>
+        {scene === 0 && <LoveExplosion />}
+      </div>
+
+      {/* SCENE 1 & 2: Photos & Text */}
+      <div className={`max-w-6xl mx-auto px-4 pt-12 pb-24 relative z-10 transition-opacity duration-1000 ${scene > 0 ? 'opacity-100' : 'opacity-0'}`}>
+        
+        {/* Beautiful Text on Scene 2 */}
+        {scene === 2 && (
+          <motion.div 
+            initial={{ opacity: 0, y: -30, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            className="text-center mb-12 mt-4"
+          >
+            <h2 
+              className="text-5xl md:text-7xl font-bold text-pink-600 drop-shadow-sm px-4" 
+              style={{ fontFamily: "'Dancing Script', cursive", textShadow: "2px 2px 4px rgba(255,192,203,0.6)" }}
+            >
+              Hal terindah yang pernah kutemukan
+            </h2>
+          </motion.div>
+        )}
+
         <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
-          {photos.map((src, index) => (
+          {(scene === 2 ? photos2 : photos1).map((src, index) => (
             <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 50, scale: 0.9 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.6, delay: index % 4 * 0.1 }}
-              whileHover={{ scale: 1.05, rotate: index % 2 === 0 ? 2 : -2 }}
+              key={`${scene}-${src}`}
+              initial={{ opacity: 0, scale: 0.5, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: index * 0.1, type: "spring" }}
+              whileHover={{ scale: 1.05, rotate: index % 2 === 0 ? 3 : -3 }}
               className="break-inside-avoid relative group"
             >
               <img
                 src={src}
                 alt={`Cute ${index}`}
-                className="rounded-2xl shadow-md w-full object-cover mb-4 border-4 border-white/50 hover:border-pink-300 transition-colors"
+                className={`w-full object-cover mb-4 transition-all duration-500 shadow-xl
+                  ${scene === 2 
+                    ? "rounded-[3rem] border-[10px] border-pink-100/80 hover:border-pink-300 p-2 bg-gradient-to-br from-white to-pink-50" 
+                    : "rounded-2xl border-4 border-white/50 hover:border-pink-300"
+                  }
+                `}
               />
+              {scene === 2 && (
+                <div className="absolute -top-3 -right-3 text-pink-500 drop-shadow-md rotate-12 bg-white/50 rounded-full p-2">
+                  <Heart size={28} fill="currentColor" />
+                </div>
+              )}
+              {scene === 2 && (
+                <div className="absolute -bottom-3 -left-3 text-pink-400 drop-shadow-md -rotate-12 bg-white/50 rounded-full p-1.5">
+                  <Heart size={20} fill="currentColor" />
+                </div>
+              )}
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                <Heart className="text-white drop-shadow-lg" size={32} fill="currentColor" />
+                <Heart className="text-white/80 drop-shadow-lg" size={scene === 2 ? 48 : 32} fill="currentColor" />
               </div>
             </motion.div>
           ))}
