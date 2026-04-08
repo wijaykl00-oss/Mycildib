@@ -141,7 +141,7 @@ const MainScreen = () => {
       <FloatingHearts />
 
       {/* Background Audio */}
-      <audio ref={audioRef} src="/lagu.mp3" loop />
+      <audio ref={audioRef} src="/music/videoplayback.m4a" loop />
 
       {/* Floating Music Controller */}
       <button
