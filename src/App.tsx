@@ -328,58 +328,93 @@ const NailongTapGame = () => {
 
 const SpecialMessages = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [inputVal, setInputVal] = useState('');
+  const [sentMessages, setSentMessages] = useState<{ id: number, type: string, icon: string, text: string, time: string }[]>([]);
 
-  const messages = [
+  useEffect(() => {
+    const saved = localStorage.getItem('user_secret_messages');
+    if (saved) {
+      try {
+        setSentMessages(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, []);
+
+  const mailboxes = [
     {
-      id: 1,
+      id: 0,
       type: 'Sad',
       icon: '💙',
       bg: 'bg-blue-50 border-blue-200 text-blue-900',
       headerBg: 'bg-blue-100/50',
-      content: 'Terkadang ada hari di mana segalanya terasa berat. Mungkin ini salah satu pesan di saat-saat rindu yang belum sempat terucap, atau saat kamu merasa sendirian. Ingatlah bahwa kamu selalu punya tempat untuk kembali.'
+      placeholder: 'Ceritakan hal yang membuat sedih hari ini...',
+      btnBg: 'bg-blue-500 hover:bg-blue-600',
     },
     {
-      id: 2,
+      id: 1,
       type: 'Happy',
       icon: '💚',
       bg: 'bg-green-50 border-green-200 text-green-900',
       headerBg: 'bg-green-100/50',
-      content: 'Hari ini sangat menyenangkan! Aku harap kamu bisa tersenyum lebar saat membaca ini. Terima kasih selalu ada untukku dan menjadi bagian paling bahagia dalam hari-hariku.'
+      placeholder: 'Tulis hal bahagia yang dialami biar aku juga tau...',
+      btnBg: 'bg-green-500 hover:bg-green-600',
     },
     {
-      id: 3,
+      id: 2,
       type: 'Netral',
       icon: '🩷',
       bg: 'bg-pink-50 border-pink-200 text-pink-900',
       headerBg: 'bg-pink-100/50',
-      content: 'Hanya ingin menyapa. Tidak ada yang spesial, hanya saja memikirkanmu membuat hari-hariku terasa lebih tenang. Semoga harimu berjalan dengan lancar dan baik-baik saja.'
+      placeholder: 'Ada cerita apa hari ini? Tulis aja di sini...',
+      btnBg: 'bg-pink-500 hover:bg-pink-600',
     }
   ];
+
+  const handleSend = (box: any) => {
+    if (!inputVal.trim()) return;
+    const newMsg = {
+      id: Date.now(),
+      type: box.type,
+      icon: box.icon,
+      text: inputVal,
+      time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' }) + ' - ' + new Date().toLocaleDateString('id-ID')
+    };
+    const updated = [newMsg, ...sentMessages];
+    setSentMessages(updated);
+    localStorage.setItem('user_secret_messages', JSON.stringify(updated));
+    setInputVal('');
+    setOpenIndex(null);
+  };
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 pb-32 pt-16">
       <div className="text-center mb-12">
         <h3 className="text-4xl font-bold text-pink-600 drop-shadow-sm mb-4" style={{ fontFamily: "'Dancing Script', cursive", textShadow: "2px 2px 4px rgba(255,192,203,0.6)" }}>
-          Surat Rahasia 💌
+          Kotak Surat Rahasia 💌
         </h3>
         <p className="text-pink-500 font-medium opacity-80 max-w-xl mx-auto">
-          Kolom pesan khusus ini hanya antara aku dan kamu. Buka suratnya sesuai dengan perasaan yang ingin kamu ketahui hari ini...
+          Tinggalkan pesan untukku di sini. Tenang, pesan ini sangat rahasia! Hanya kamu (yang menulis) dan aku (pembuat website) yang bisa membacanya karena ini disimpan secara khusus.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {messages.map((msg, idx) => (
+        {mailboxes.map((box, idx) => (
           <motion.div
-            key={msg.id}
+            key={box.id}
             layout
-            onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
-            className={`rounded-3xl border-2 shadow-md overflow-hidden cursor-pointer transition-all hover:shadow-lg ${msg.bg}`}
-            whileHover={{ y: -5 }}
+            onClick={() => {
+               if(openIndex !== idx) {
+                  setOpenIndex(idx);
+                  setInputVal('');
+               }
+            }}
+            className={`rounded-3xl border-2 shadow-md overflow-hidden cursor-pointer transition-all hover:shadow-lg flex flex-col ${box.bg}`}
+            whileHover={openIndex !== idx ? { y: -5 } : {}}
           >
-            <div className={`p-6 flex items-center justify-between ${msg.headerBg}`}>
+            <div className={`p-6 flex items-center justify-between ${box.headerBg}`}>
               <div className="flex items-center gap-3">
-                <span className="text-3xl drop-shadow-sm">{msg.icon}</span>
-                <span className="font-bold text-xl">{msg.type}</span>
+                <span className="text-3xl drop-shadow-sm">{box.icon}</span>
+                <span className="font-bold text-xl">{box.type}</span>
               </div>
               <motion.div
                 animate={{ rotate: openIndex === idx ? 180 : 0 }}
@@ -394,14 +429,50 @@ const SpecialMessages = () => {
               animate={{ height: openIndex === idx ? 'auto' : 0, opacity: openIndex === idx ? 1 : 0 }}
               className="overflow-hidden"
             >
-              <div className="p-6 pt-4 font-medium leading-relaxed italic border-t border-black/5 bg-white/40">
-                "{msg.content}"
-                <p className="mt-6 text-sm font-bold opacity-60 text-right">~ Pembuat Website</p>
+              <div className="p-5 pt-4 border-t border-black/5 bg-white/40" onClick={e => e.stopPropagation()}>
+                <textarea 
+                  className="w-full h-32 p-4 text-sm rounded-2xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-pink-300 bg-white/80 resize-none font-medium leading-relaxed shadow-inner"
+                  placeholder={box.placeholder}
+                  value={inputVal}
+                  onChange={(e) => setInputVal(e.target.value)}
+                />
+                <button
+                  onClick={() => handleSend(box)}
+                  className={`mt-4 w-full py-3 rounded-xl font-bold text-white shadow-md transition-transform hover:scale-105 active:scale-95 ${box.btnBg}`}
+                >
+                  Kirim Surat {box.icon}
+                </button>
               </div>
             </motion.div>
           </motion.div>
         ))}
       </div>
+
+      {sentMessages.length > 0 && (
+         <div className="mt-16">
+            <h4 className="text-3xl font-bold text-pink-600 text-center mb-8 drop-shadow-sm" style={{ fontFamily: "'Dancing Script', cursive" }}>Riwayat Pesanmu</h4>
+            <div className="flex flex-col gap-4 max-w-2xl mx-auto">
+               {sentMessages.map((msg) => (
+                  <motion.div 
+                     key={msg.id}
+                     initial={{ opacity: 0, scale: 0.9 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-md border border-pink-100 flex gap-4 items-start relative overflow-hidden"
+                  >
+                     <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-pink-100 to-transparent opacity-50 rounded-bl-3xl"></div>
+                     <div className="text-4xl drop-shadow-sm">{msg.icon}</div>
+                     <div className="flex-1 min-w-0">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-1 border-b border-gray-100 pb-2">
+                           <h5 className="font-bold text-slate-800 text-lg">{msg.type} Message</h5>
+                           <span className="text-xs text-slate-400 font-semibold">{msg.time}</span>
+                        </div>
+                        <p className="text-slate-600 font-medium whitespace-pre-wrap text-[15px] leading-relaxed italic">"{msg.text}"</p>
+                     </div>
+                  </motion.div>
+               ))}
+            </div>
+         </div>
+      )}
     </div>
   );
 };
