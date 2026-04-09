@@ -347,7 +347,7 @@ const SpecialMessages = () => {
       icon: '💙',
       bg: 'bg-blue-50 border-blue-200 text-blue-900',
       headerBg: 'bg-blue-100/50',
-      placeholder: 'Ceritakan hal yang membuat sedih hari ini...',
+      placeholder: 'kalo lagi sedih boleh cerita nih sini...',
       btnBg: 'bg-blue-500 hover:bg-blue-600',
     },
     {
@@ -356,7 +356,7 @@ const SpecialMessages = () => {
       icon: '💚',
       bg: 'bg-green-50 border-green-200 text-green-900',
       headerBg: 'bg-green-100/50',
-      placeholder: 'Tulis hal bahagia yang dialami biar aku juga tau...',
+      placeholder: 'Tulis hal bahagia apa aja deh...',
       btnBg: 'bg-green-500 hover:bg-green-600',
     },
     {
@@ -370,22 +370,52 @@ const SpecialMessages = () => {
     }
   ];
 
-  const handleSend = (box: any) => {
-    if (!inputVal.trim()) return;
-    const newMsg = {
-      id: Date.now(),
-      type: box.type,
-      icon: box.icon,
-      text: inputVal,
-      time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' }) + ' - ' + new Date().toLocaleDateString('id-ID')
-    };
-    const updated = [newMsg, ...sentMessages];
-    setSentMessages(updated);
-    localStorage.setItem('user_secret_messages', JSON.stringify(updated));
-    setInputVal('');
-    setOpenIndex(null);
-  };
+  const [isSending, setIsSending] = useState(false);
 
+  const handleSend = async (box: any) => {
+    if (!inputVal.trim() || isSending) return;
+    
+    setIsSending(true);
+    const timeString = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' }) + ' - ' + new Date().toLocaleDateString('id-ID');
+
+    try {
+      // Kirim rahasia ke Email via FormSubmit
+      await fetch("https://formsubmit.co/ajax/ak123k09@gmail.com", {
+        method: "POST",
+        headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            _subject: `💌 Surat Rahasia Baru: ${box.type}`,
+            _template: "table",
+            "Kategori Surat": box.type,
+            "Pesan dari Dia": inputVal,
+            "Waktu Dikirim": timeString
+        })
+      });
+
+      // Tetap simpan secara lokal agar pengirim bisa melihat riwayat pesannya
+      const newMsg = {
+        id: Date.now(),
+        type: box.type,
+        icon: box.icon,
+        text: inputVal,
+        time: timeString
+      };
+      
+      const updated = [newMsg, ...sentMessages];
+      setSentMessages(updated);
+      localStorage.setItem('user_secret_messages', JSON.stringify(updated));
+      setInputVal('');
+      setOpenIndex(null);
+    } catch (error) {
+      console.error("Gagal mengirim:", error);
+      alert("Oops, pesannya tersangkut. Coba lagi ya!");
+    } finally {
+      setIsSending(false);
+    }
+  };
   return (
     <div className="w-full max-w-5xl mx-auto px-4 pb-32 pt-16">
       <div className="text-center mb-12">
@@ -437,10 +467,11 @@ const SpecialMessages = () => {
                   onChange={(e) => setInputVal(e.target.value)}
                 />
                 <button
+                  disabled={isSending}
                   onClick={() => handleSend(box)}
-                  className={`mt-4 w-full py-3 rounded-xl font-bold text-white shadow-md transition-transform hover:scale-105 active:scale-95 ${box.btnBg}`}
+                  className={`mt-4 w-full py-3 rounded-xl font-bold text-white shadow-md transition-transform hover:scale-105 active:scale-95 ${box.btnBg} ${isSending ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  Kirim Surat {box.icon}
+                  {isSending ? 'Mengirim...' : `Kirim Surat ${box.icon}`}
                 </button>
               </div>
             </motion.div>
