@@ -393,7 +393,7 @@ const SpecialMessages = () => {
           Kotak Surat Rahasia 💌
         </h3>
         <p className="text-pink-500 font-medium opacity-80 max-w-xl mx-auto">
-          Tinggalkan pesan untukku di sini. Tenang, pesan ini sangat rahasia! Hanya kamu (yang menulis) dan aku (pembuat website) yang bisa membacanya karena ini disimpan secara khusus.
+          Pesan khusus orang penting woik 😎
         </p>
       </div>
 
