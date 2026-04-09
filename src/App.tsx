@@ -162,9 +162,9 @@ const NailongTapGame = () => {
       let idCounter = 0;
       timer = setInterval(() => {
         const rand = Math.random();
-        let type = '🦖';
-        if (rand > 0.8) type = '💣';
-        else if (rand > 0.6) type = '💖';
+        const cuteEmotes = ['🥰', '🥺', '🤣', '😻', '🤩', '🫣', '🤪', '😸', '✨', '💖'];
+        let type = cuteEmotes[Math.floor(Math.random() * cuteEmotes.length)];
+        if (rand > 0.75) type = '💣';
 
         setItems((prev) => [
           ...prev,
@@ -215,9 +215,8 @@ const NailongTapGame = () => {
 
     setProgress((prev) => {
       let next = prev;
-      if (type === '🦖') next += 10;
-      else if (type === '💖') next += 15;
-      else if (type === '💣') next -= 20;
+      if (type === '💣') next -= 20;
+      else next += 12; // all lovely emotes give 12%
 
       if (next >= 100) {
         setStatus('won');
@@ -323,6 +322,86 @@ const NailongTapGame = () => {
           <div className="mt-2 font-bold text-sm text-pink-400 bg-white/40 px-3 py-1 rounded-full shadow-sm">{Math.floor(progress)}%</div>
         </div>
       )}
+    </div>
+  );
+};
+
+const SpecialMessages = () => {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const messages = [
+    {
+      id: 1,
+      type: 'Sad',
+      icon: '💙',
+      bg: 'bg-blue-50 border-blue-200 text-blue-900',
+      headerBg: 'bg-blue-100/50',
+      content: 'Terkadang ada hari di mana segalanya terasa berat. Mungkin ini salah satu pesan di saat-saat rindu yang belum sempat terucap, atau saat kamu merasa sendirian. Ingatlah bahwa kamu selalu punya tempat untuk kembali.'
+    },
+    {
+      id: 2,
+      type: 'Happy',
+      icon: '💚',
+      bg: 'bg-green-50 border-green-200 text-green-900',
+      headerBg: 'bg-green-100/50',
+      content: 'Hari ini sangat menyenangkan! Aku harap kamu bisa tersenyum lebar saat membaca ini. Terima kasih selalu ada untukku dan menjadi bagian paling bahagia dalam hari-hariku.'
+    },
+    {
+      id: 3,
+      type: 'Netral',
+      icon: '🩷',
+      bg: 'bg-pink-50 border-pink-200 text-pink-900',
+      headerBg: 'bg-pink-100/50',
+      content: 'Hanya ingin menyapa. Tidak ada yang spesial, hanya saja memikirkanmu membuat hari-hariku terasa lebih tenang. Semoga harimu berjalan dengan lancar dan baik-baik saja.'
+    }
+  ];
+
+  return (
+    <div className="w-full max-w-5xl mx-auto px-4 pb-32 pt-16">
+      <div className="text-center mb-12">
+        <h3 className="text-4xl font-bold text-pink-600 drop-shadow-sm mb-4" style={{ fontFamily: "'Dancing Script', cursive", textShadow: "2px 2px 4px rgba(255,192,203,0.6)" }}>
+          Surat Rahasia 💌
+        </h3>
+        <p className="text-pink-500 font-medium opacity-80 max-w-xl mx-auto">
+          Kolom pesan khusus ini hanya antara aku dan kamu. Buka suratnya sesuai dengan perasaan yang ingin kamu ketahui hari ini...
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {messages.map((msg, idx) => (
+          <motion.div
+            key={msg.id}
+            layout
+            onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+            className={`rounded-3xl border-2 shadow-md overflow-hidden cursor-pointer transition-all hover:shadow-lg ${msg.bg}`}
+            whileHover={{ y: -5 }}
+          >
+            <div className={`p-6 flex items-center justify-between ${msg.headerBg}`}>
+              <div className="flex items-center gap-3">
+                <span className="text-3xl drop-shadow-sm">{msg.icon}</span>
+                <span className="font-bold text-xl">{msg.type}</span>
+              </div>
+              <motion.div
+                animate={{ rotate: openIndex === idx ? 180 : 0 }}
+                className="opacity-50 text-xl font-bold"
+              >
+                ▼
+              </motion.div>
+            </div>
+            
+            <motion.div
+              initial={false}
+              animate={{ height: openIndex === idx ? 'auto' : 0, opacity: openIndex === idx ? 1 : 0 }}
+              className="overflow-hidden"
+            >
+              <div className="p-6 pt-4 font-medium leading-relaxed italic border-t border-black/5 bg-white/40">
+                "{msg.content}"
+                <p className="mt-6 text-sm font-bold opacity-60 text-right">~ Pembuat Website</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -512,6 +591,9 @@ const MainScreen = () => {
         
         {/* Playful Games Section Bottom */}
         <NailongTapGame />
+        
+        {/* Surat Pesan Khusus Setelah Games */}
+        <SpecialMessages />
         
       </div>
     </div>
