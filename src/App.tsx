@@ -237,7 +237,14 @@ const FavoritePhotos = () => {
     setTempPhotos(savedPhotos);
   };
 
+  const handleDeleteAll = () => {
+    setTempPhotos([null, null, null]);
+    setSavedPhotos([null, null, null]);
+    localStorage.removeItem('adibah_best_photos');
+  };
+
   const showButtons = JSON.stringify(tempPhotos) !== JSON.stringify(savedPhotos) && tempPhotos.every(p => p !== null);
+  const hasSavedPhotos = savedPhotos.some(p => p !== null);
 
   return (
     <div className="max-w-4xl mx-auto mt-16 mb-20 text-center px-4 relative z-20">
@@ -267,6 +274,11 @@ const FavoritePhotos = () => {
              <button onClick={handleCancel} className="px-8 py-3 bg-white text-pink-500 border border-pink-300 rounded-full font-bold shadow-lg hover:bg-pink-50 transition-colors active:scale-95">Cancel</button>
           </motion.div>
       )}
+      {!showButtons && hasSavedPhotos && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-10 flex justify-center gap-4">
+             <button onClick={handleDeleteAll} className="px-8 py-3 bg-red-400 text-white rounded-full font-bold shadow-lg shadow-red-200 hover:bg-red-500 transition-colors active:scale-95">🗑 Hapus Semua Foto</button>
+          </motion.div>
+      )}
     </div>
   );
 };
@@ -275,14 +287,16 @@ const NailongTapGame = () => {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'idle' | 'playing' | 'cracked' | 'won'>('idle');
   const [items, setItems] = useState<{ id: number; type: string; left: number }[]>([]);
-  const [explosions, setExplosions] = useState<{id: number, left: boolean, particles: {id: number, char: string}[]}[]>([]);
+  const [explosions, setExplosions] = useState<{id: number, left: boolean, particles: {id: number, type: string, color: string}[]}[]>([]);
 
   const triggerTrumpet = (left: boolean) => {
     const id = Date.now();
-    const chars = ['✨', '🎉', '🌸', '🦋', '🎈', '💖'];
-    const particles = Array.from({length: 10}).map((_, i) => ({
+    const colors = ['bg-pink-400', 'bg-red-400', 'bg-white', 'bg-pink-300', 'bg-rose-500'];
+    const types = ['circle', 'square', 'sliver', 'heart'];
+    const particles = Array.from({length: 40}).map((_, i) => ({
       id: i,
-      char: chars[Math.floor(Math.random() * chars.length)]
+      type: types[Math.floor(Math.random() * types.length)],
+      color: colors[Math.floor(Math.random() * colors.length)]
     }));
     setExplosions(prev => [...prev, { id, left, particles }]);
     setTimeout(() => {
@@ -358,22 +372,31 @@ const NailongTapGame = () => {
       {explosions.map(exp => (
         <div key={exp.id} className={`absolute top-1/2 -translate-y-1/2 z-20 pointer-events-none ${exp.left ? 'left-10 md:left-32' : 'right-10 md:right-32'}`}>
            {exp.particles.map(p => {
-              const angle = Math.random() * Math.PI * 2;
-              const velocity = Math.random() * 80 + 40;
+              // Menembakkan confetti ke arah atas luar
+              const baseAngle = exp.left ? -Math.PI / 4 : (Math.PI * 5) / 4;
+              const angleSpread = Math.PI / 2; // sebaran 90 derajat
+              const angle = baseAngle + (Math.random() - 0.5) * angleSpread;
+              const velocity = Math.random() * 150 + 100;
+              
+              let shapeClass = `w-3 h-3 ${p.color}`;
+              if (p.type === 'circle') shapeClass += ' rounded-full';
+              else if (p.type === 'sliver') shapeClass = `w-1 h-4 ${p.color}`;
+
               return (
                  <motion.div
                     key={p.id}
-                    className="absolute text-5xl"
-                    initial={{ x: 0, y: 0, opacity: 1, scale: 0 }}
+                    className={`absolute shadow-sm ${p.type === 'heart' ? 'text-lg text-pink-500 drop-shadow-md bg-transparent' : shapeClass}`}
+                    initial={{ x: 0, y: 0, opacity: 1, scale: 0, rotate: 0 }}
                     animate={{
                        x: `${Math.cos(angle) * velocity}px`,
-                       y: `${Math.sin(angle) * velocity}px`,
+                       y: `${Math.sin(angle) * velocity + 50}px`,
                        opacity: [1, 1, 0],
-                       scale: [0, Math.random() * 1.5 + 1, 0.5]
+                       scale: [0, Math.random() * 0.8 + 0.6, 0.4],
+                       rotate: Math.random() * 720
                     }}
                     transition={{ duration: 1.5 + Math.random(), ease: "easeOut" }}
                  >
-                    {p.char}
+                    {p.type === 'heart' ? '❤️' : ''}
                  </motion.div>
               );
            })}
@@ -667,6 +690,7 @@ const MainScreen = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [scene, setScene] = useState(0);
+  const [draggingSrc, setDraggingSrc] = useState<string|null>(null);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -770,16 +794,24 @@ const MainScreen = () => {
                 <motion.div
                   key={`top-shape-${src}`}
                   initial={{ opacity: 0, scale: 0.6, y: 50 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: index * 0.2, type: "spring" }}
-                  whileHover={{ scale: 1.05, rotate: index % 2 === 0 ? 3 : -3 }}
-                  whileTap={{ scale: 0.95, y: 5, rotate: 0 }}
+                  animate={draggingSrc === src 
+                    ? { rotate: [-5, 5, -5] } 
+                    : { opacity: 1, scale: 1, y: 0, rotate: index % 2 === 0 ? 3 : -3 }
+                  }
+                  transition={draggingSrc === src 
+                    ? { repeat: Infinity, duration: 0.3, ease: "linear" } 
+                    : { duration: 0.8, delay: index * 0.2, type: "spring" }
+                  }
+                  whileHover={draggingSrc === src ? {} : { scale: 1.05 }}
+                  whileTap={draggingSrc === src ? {} : { scale: 0.95, y: 5, rotate: 0 }}
                   onClick={() => handleDownload(src)}
                   className={`relative overflow-hidden shadow-xl w-48 h-56 md:w-64 md:h-80 cursor-grab active:cursor-grabbing ${style.container}`}
                   draggable
                   onDragStart={(e: any) => {
                     e.dataTransfer.setData('text/plain', src);
+                    setDraggingSrc(src);
                   }}
+                  onDragEnd={() => setDraggingSrc(null)}
                 >
                   <img
                     src={src}
