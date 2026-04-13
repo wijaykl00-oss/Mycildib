@@ -222,10 +222,18 @@ const FavoritePhotos = () => {
       const { src, x, y } = e.detail;
       let droppedIdx = -1;
       
+      const scrollX = window.scrollX || window.pageXOffset;
+      const scrollY = window.scrollY || window.pageYOffset;
+
       frameRefs.forEach((ref, idx) => {
         if (ref.current) {
           const rect = ref.current.getBoundingClientRect();
-          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+          const absLeft = rect.left + scrollX;
+          const absRight = rect.right + scrollX;
+          const absTop = rect.top + scrollY;
+          const absBottom = rect.bottom + scrollY;
+          
+          if (x >= absLeft && x <= absRight && y >= absTop && y <= absBottom) {
             droppedIdx = idx;
           }
         }
