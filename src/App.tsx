@@ -55,7 +55,7 @@ const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
   };
 
   return (
-    <div className="min-h-screen bg-pink-50 flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-aurora flex items-center justify-center p-4 relative transition-colors duration-1000">
       <FloatingHearts />
 
       <motion.div
@@ -154,6 +154,15 @@ const NailongTapGame = () => {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'idle' | 'playing' | 'cracked' | 'won'>('idle');
   const [items, setItems] = useState<{ id: number; type: string; left: number }[]>([]);
+  const [explosions, setExplosions] = useState<{id: number, left: boolean}[]>([]);
+
+  const triggerTrumpet = (left: boolean) => {
+    const id = Date.now();
+    setExplosions(prev => [...prev, { id, left }]);
+    setTimeout(() => {
+      setExplosions(prev => prev.filter(e => e.id !== id));
+    }, 2000);
+  };
 
   // Spawn items
   useEffect(() => {
@@ -179,28 +188,7 @@ const NailongTapGame = () => {
     return () => clearInterval(timer);
   }, [status]);
 
-  // Natural Drain
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (status === 'playing') {
-      timer = setInterval(() => {
-        setProgress((prev) => {
-          const next = prev - 0.8; // -8% per second
-          if (next <= 0) {
-            setStatus('cracked');
-            setTimeout(() => {
-              setStatus('idle');
-              setProgress(0);
-              setItems([]);
-            }, 2500);
-            return 0;
-          }
-          return next;
-        });
-      }, 100);
-    }
-    return () => clearInterval(timer);
-  }, [status]);
+  // Natural Drain removed per user request
 
   const startGame = () => {
     setStatus('playing');
@@ -242,10 +230,30 @@ const NailongTapGame = () => {
 
   return (
     <div className="w-full max-w-md mx-auto bg-white/60 backdrop-blur-md rounded-[3rem] p-6 shadow-xl border-4 border-pink-200 flex flex-col items-center gap-6 relative overflow-hidden my-16 h-[450px]">
+      
+      {/* Trumpet Decorations */}
+      <button onClick={() => triggerTrumpet(true)} className="absolute left-2 top-1/2 -translate-y-1/2 text-4xl z-30 hover:scale-125 transition-transform active:scale-90">🎉</button>
+      <button onClick={() => triggerTrumpet(false)} className="absolute right-2 top-1/2 -translate-y-1/2 text-4xl z-30 hover:scale-125 transition-transform active:scale-90" style={{ transform: 'translateY(-50%) scaleX(-1)' }}>🎉</button>
+      
+      {explosions.map(exp => (
+        <motion.div key={exp.id} className={`absolute top-1/2 -translate-y-1/2 z-20 text-3xl pointer-events-none ${exp.left ? 'left-10' : 'right-10'}`}
+          initial={{ scale: 0, opacity: 1 }}
+          animate={{
+            x: exp.left ? [0, 50, 100] : [0, -50, -100],
+            y: [0, -50, 50],
+            scale: [1, 2, 0],
+            opacity: [1, 1, 0]
+          }}
+          transition={{ duration: 1 }}
+        >
+          💖
+        </motion.div>
+      ))}
+
       <h3 className="text-3xl z-10 font-bold text-pink-600 text-center drop-shadow-sm mt-2" style={{ fontFamily: "'Dancing Script', cursive" }}>
-        Tangkap Cinta!
+        Tangkap emot jangan bom
       </h3>
-      <p className="text-xs text-pink-500 font-bold -mt-4 z-10 opacity-70">Awas Bom! Jangan sampai habis!</p>
+      <p className="text-xs text-pink-500 font-bold -mt-4 z-10 opacity-70">Hanya berkurang saat kena bom!</p>
 
       {/* Game Area Boundary */}
       <div className="absolute inset-0 top-20 bottom-0 w-full overflow-hidden">
@@ -254,11 +262,11 @@ const NailongTapGame = () => {
             <motion.button
               key={item.id}
               onClick={() => handleTapItem(item.id, item.type)}
-              className="absolute text-5xl md:text-6xl cursor-pointer drop-shadow-md select-none z-20 hover:scale-110 active:scale-90"
+              className="absolute text-5xl md:text-6xl cursor-pointer drop-shadow-md select-none z-20 hover:scale-110 active:scale-90 p-4"
               style={{ top: 0, left: `${item.left}%`, WebkitTapHighlightColor: 'transparent' }}
-              initial={{ y: -80, rotate: -30 }}
-              animate={{ y: 500, rotate: 30 }}
-              transition={{ duration: 2.8, ease: 'linear' }}
+              initial={{ y: -100, rotate: -30 }}
+              animate={{ y: 600, rotate: 30 }}
+              transition={{ duration: 4.8, ease: 'linear' }}
               onAnimationComplete={() => handleAnimationComplete(item.id)}
             >
               {item.type}
@@ -440,6 +448,7 @@ const SpecialMessages = () => {
             }}
             className={`rounded-3xl border-2 shadow-md overflow-hidden cursor-pointer transition-all hover:shadow-lg flex flex-col ${box.bg}`}
             whileHover={openIndex !== idx ? { y: -5 } : {}}
+            whileTap={{ scale: 0.98, y: 2 }}
           >
             <div className={`p-6 flex items-center justify-between ${box.headerBg}`}>
               <div className="flex items-center gap-3">
@@ -508,6 +517,21 @@ const SpecialMessages = () => {
   );
 };
 
+const handleDownload = async (src: string) => {
+  try {
+    const response = await fetch(src);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `foto-untuk-adibah-${Date.now()}.jpeg`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch(e) { console.log(e); }
+};
+
 const MainScreen = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -552,7 +576,7 @@ const MainScreen = () => {
   ];
 
   return (
-    <div className={`bg-pink-50 text-pink-900 font-sans relative overflow-x-hidden transition-colors duration-1000 ${scene > 0 ? '' : 'h-screen overflow-hidden'}`}>
+    <div className={`bg-aurora text-pink-900 font-sans relative overflow-x-hidden transition-colors duration-1000 ${scene > 0 ? '' : 'h-screen overflow-hidden'}`}>
       <FloatingHearts />
 
       {/* Background Audio */}
@@ -625,7 +649,9 @@ const MainScreen = () => {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: index * 0.2, type: "spring" }}
                   whileHover={{ scale: 1.05, rotate: index % 2 === 0 ? 3 : -3 }}
-                  className={`relative overflow-hidden shadow-xl w-48 h-56 md:w-64 md:h-80 ${style.container}`}
+                  whileTap={{ scale: 0.95, y: 5, rotate: 0 }}
+                  onClick={() => handleDownload(src)}
+                  className={`relative overflow-hidden shadow-xl w-48 h-56 md:w-64 md:h-80 cursor-pointer ${style.container}`}
                 >
                   <img
                     src={src}
@@ -677,7 +703,9 @@ const MainScreen = () => {
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.8, type: "spring" }}
                   whileHover={{ scale: 1.05, rotate: index % 2 === 0 ? 2 : -2 }}
-                  className={`break-inside-avoid relative overflow-hidden shadow-xl ${style.container}`}
+                  whileTap={{ scale: 0.95, y: 5, rotate: 0 }}
+                  onClick={() => handleDownload(src)}
+                  className={`break-inside-avoid relative overflow-hidden shadow-xl cursor-pointer ${style.container}`}
                 >
                   <img
                     src={src}
