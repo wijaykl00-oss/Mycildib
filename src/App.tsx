@@ -858,6 +858,20 @@ const MainScreen = () => {
                   className={`relative overflow-hidden shadow-xl w-48 h-56 md:w-64 md:h-80 cursor-grab active:cursor-grabbing ${style.container}`}
                   drag
                   dragSnapToOrigin
+                  onDrag={(event: any) => {
+                    let clientY = event.clientY;
+                    if (clientY === undefined && event.touches && event.touches.length > 0) {
+                      clientY = event.touches[0].clientY;
+                    }
+                    if (clientY !== undefined) {
+                      const edgeThreshold = 100;
+                      if (clientY < edgeThreshold) {
+                        window.scrollBy({ top: -15 });
+                      } else if (window.innerHeight - clientY < edgeThreshold) {
+                        window.scrollBy({ top: 15 });
+                      }
+                    }
+                  }}
                   onDragStart={() => {
                     setDraggingSrc(src);
                   }}
@@ -932,6 +946,20 @@ const MainScreen = () => {
                   className={`break-inside-avoid relative overflow-hidden shadow-xl cursor-grab active:cursor-grabbing ${style.container}`}
                   drag
                   dragSnapToOrigin
+                  onDrag={(event: any) => {
+                    let clientY = event.clientY;
+                    if (clientY === undefined && event.touches && event.touches.length > 0) {
+                      clientY = event.touches[0].clientY;
+                    }
+                    if (clientY !== undefined) {
+                      const edgeThreshold = 100;
+                      if (clientY < edgeThreshold) {
+                        window.scrollBy({ top: -15 });
+                      } else if (window.innerHeight - clientY < edgeThreshold) {
+                        window.scrollBy({ top: 15 });
+                      }
+                    }
+                  }}
                   onDragStart={() => {
                     setDraggingSrc(src);
                   }}
