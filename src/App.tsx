@@ -206,6 +206,7 @@ const LoveExplosion = () => {
 const FavoritePhotos = () => {
   const [savedPhotos, setSavedPhotos] = useState<(string|null)[]>([null, null, null]);
   const [tempPhotos, setTempPhotos] = useState<(string|null)[]>([null, null, null]);
+  const frameRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
 
   useEffect(() => {
     const d = localStorage.getItem('adibah_best_photos');
@@ -216,17 +217,34 @@ const FavoritePhotos = () => {
         setTempPhotos(parsed);
       } catch(e) {}
     }
+
+    const handleCustomDrop = (e: any) => {
+      const { src, x, y } = e.detail;
+      let droppedIdx = -1;
+      
+      frameRefs.forEach((ref, idx) => {
+        if (ref.current) {
+          const rect = ref.current.getBoundingClientRect();
+          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            droppedIdx = idx;
+          }
+        }
+      });
+      
+      if (droppedIdx !== -1) {
+        setTempPhotos(prev => {
+          const newP = [...prev];
+          newP[droppedIdx] = src;
+          return newP;
+        });
+      }
+    };
+    
+    window.addEventListener('custom-photo-drop', handleCustomDrop);
+    return () => window.removeEventListener('custom-photo-drop', handleCustomDrop);
   }, []);
 
-  const handleDrop = (e: any, index: number) => {
-    e.preventDefault();
-    const src = e.dataTransfer.getData('text/plain');
-    if (src) {
-      const newP = [...tempPhotos];
-      newP[index] = src;
-      setTempPhotos(newP);
-    }
-  };
+  // Native Drop Handlers removed in favor of CustomEvent handling
 
   const handleSave = () => {
     setSavedPhotos(tempPhotos);
@@ -253,9 +271,8 @@ const FavoritePhotos = () => {
         {[0, 1, 2].map(idx => (
           <div 
             key={idx}
+            ref={frameRefs[idx]}
             className="w-40 h-56 md:w-48 md:h-64 border-4 border-dashed border-pink-400 rounded-[2.5rem] flex flex-col items-center justify-center bg-white/40 backdrop-blur-sm relative overflow-hidden group shadow-[0_0_25px_rgba(236,72,153,0.4)] transition-all hover:scale-105"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => handleDrop(e, idx)}
           >
             {tempPhotos[idx] ? (
                <img src={tempPhotos[idx]!} className="w-full h-full object-cover pointer-events-none" />
@@ -691,6 +708,7 @@ const MainScreen = () => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [scene, setScene] = useState(0);
   const [draggingSrc, setDraggingSrc] = useState<string|null>(null);
+  const [downloadPromptSrc, setDownloadPromptSrc] = useState<string|null>(null);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -732,6 +750,28 @@ const MainScreen = () => {
       <AuroraBackground />
       <RomanticDecorations />
       <FloatingHearts />
+
+      <AnimatePresence>
+        {downloadPromptSrc && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setDownloadPromptSrc(null)}>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8, y: 50 }} 
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 50 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white/90 backdrop-blur-md p-6 rounded-[2rem] shadow-2xl border-4 border-pink-200 max-w-sm w-full text-center flex flex-col items-center gap-4"
+            >
+              <img src={downloadPromptSrc} className="w-48 h-48 object-cover rounded-2xl shadow-inner mb-2" />
+              <h3 className="text-2xl font-bold text-pink-600">Simpan Foto Ini?</h3>
+              <p className="text-sm text-pink-500 font-medium">Bawa pulang kenangan manis ini ke perangkatmu?</p>
+              <div className="flex gap-4 mt-2 w-full">
+                 <button onClick={() => { handleDownload(downloadPromptSrc); setDownloadPromptSrc(null); }} className="flex-1 py-3 bg-pink-500 text-white rounded-xl font-bold shadow-md hover:bg-pink-600 active:scale-95 transition-all">Download</button>
+                 <button onClick={() => setDownloadPromptSrc(null)} className="flex-1 py-3 bg-white text-pink-500 border border-pink-200 rounded-xl font-bold shadow-sm hover:bg-pink-50 active:scale-95 transition-all">Batal</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <audio 
         ref={audioRef} 
@@ -794,29 +834,36 @@ const MainScreen = () => {
                 <motion.div
                   key={`top-shape-${src}`}
                   initial={{ opacity: 0, scale: 0.6, y: 50 }}
-                  animate={draggingSrc === src 
-                    ? { rotate: [-5, 5, -5] } 
-                    : { opacity: 1, scale: 1, y: 0, rotate: index % 2 === 0 ? 3 : -3 }
+                  animate={
+                    draggingSrc === src 
+                    ? { rotate: [-2, 2, -2], zIndex: 50, scale: 1.1 } 
+                    : { opacity: 1, scale: 1, y: 0, rotate: index % 2 === 0 ? 3 : -3, zIndex: 1 }
                   }
-                  transition={draggingSrc === src 
-                    ? { repeat: Infinity, duration: 0.3, ease: "linear" } 
+                  transition={
+                    draggingSrc === src 
+                    ? { repeat: Infinity, duration: 2, ease: "easeInOut" } 
                     : { duration: 0.8, delay: index * 0.2, type: "spring" }
                   }
                   whileHover={draggingSrc === src ? {} : { scale: 1.05 }}
                   whileTap={draggingSrc === src ? {} : { scale: 0.95, y: 5, rotate: 0 }}
-                  onClick={() => handleDownload(src)}
+                  onDoubleClick={() => setDownloadPromptSrc(src)}
                   className={`relative overflow-hidden shadow-xl w-48 h-56 md:w-64 md:h-80 cursor-grab active:cursor-grabbing ${style.container}`}
-                  draggable
-                  onDragStart={(e: any) => {
-                    e.dataTransfer.setData('text/plain', src);
+                  drag
+                  dragSnapToOrigin
+                  onDragStart={() => {
                     setDraggingSrc(src);
                   }}
-                  onDragEnd={() => setDraggingSrc(null)}
+                  onDragEnd={(event, info) => {
+                    setDraggingSrc(null);
+                    const dropEvent = new CustomEvent('custom-photo-drop', { detail: { src, x: info.point.x, y: info.point.y } });
+                    window.dispatchEvent(dropEvent);
+                  }}
                 >
                   <img
                     src={src}
                     alt={`Varied Top ${index}`}
-                    className={`w-full h-full object-cover ${style.img}`}
+                    draggable={false}
+                    className={`w-full h-full object-cover pointer-events-none ${style.img}`}
                   />
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 bg-pink-500/20 mix-blend-overlay pointer-events-none"></div>
                 </motion.div>
@@ -858,19 +905,39 @@ const MainScreen = () => {
               return (
                 <motion.div
                   key={`bottom-${src}`}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, scale: 0.8, y: 30 }}
+                  whileInView={draggingSrc === src ? undefined : { opacity: 1, scale: 1, y: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.8, type: "spring" }}
-                  whileHover={{ scale: 1.05, rotate: index % 2 === 0 ? 2 : -2 }}
-                  whileTap={{ scale: 0.95, y: 5, rotate: 0 }}
-                  onClick={() => handleDownload(src)}
-                  className={`break-inside-avoid relative overflow-hidden shadow-xl cursor-pointer ${style.container}`}
+                  animate={
+                    draggingSrc === src 
+                    ? { rotate: [-2, 2, -2], zIndex: 50, scale: 1.1 } 
+                    : { rotate: index % 2 === 0 ? 2 : -2, zIndex: 1 }
+                  }
+                  transition={
+                    draggingSrc === src 
+                    ? { repeat: Infinity, duration: 2, ease: "easeInOut" } 
+                    : { duration: 0.8, type: "spring" }
+                  }
+                  whileHover={draggingSrc === src ? {} : { scale: 1.05 }}
+                  whileTap={draggingSrc === src ? {} : { scale: 0.95, y: 5, rotate: 0 }}
+                  onDoubleClick={() => setDownloadPromptSrc(src)}
+                  className={`break-inside-avoid relative overflow-hidden shadow-xl cursor-grab active:cursor-grabbing ${style.container}`}
+                  drag
+                  dragSnapToOrigin
+                  onDragStart={() => {
+                    setDraggingSrc(src);
+                  }}
+                  onDragEnd={(event, info) => {
+                    setDraggingSrc(null);
+                    const dropEvent = new CustomEvent('custom-photo-drop', { detail: { src, x: info.point.x, y: info.point.y } });
+                    window.dispatchEvent(dropEvent);
+                  }}
                 >
                   <img
                     src={src}
                     alt={`Varied ${index}`}
-                    className={`w-full h-full object-cover ${style.img}`}
+                    draggable={false}
+                    className={`w-full h-full object-cover pointer-events-none ${style.img}`}
                   />
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 bg-pink-500/20 mix-blend-overlay pointer-events-none"></div>
                 </motion.div>
