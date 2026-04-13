@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'motion/react';
-import { Heart, Music } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Heart, Music, Play, Pause } from 'lucide-react';
 
 const FloatingHearts = () => {
   const [hearts, setHearts] = useState<{ id: number; left: number; delay: number; size: number }[]>([]);
@@ -16,7 +16,7 @@ const FloatingHearts = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-20">
       {hearts.map((heart) => (
         <motion.div
           key={heart.id}
@@ -41,6 +41,57 @@ const FloatingHearts = () => {
   );
 };
 
+const RomanticDecorations = () => {
+  const decors = ['🌹', '💌', '💍', '🕊️', '💐', '🎀'];
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      {Array.from({ length: 15 }).map((_, i) => {
+        const decor = decors[Math.floor(Math.random() * decors.length)];
+        return (
+          <motion.div
+            key={`decor-${i}`}
+            className="absolute text-5xl opacity-30 blur-[1px]"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: [0, -30, 0],
+              rotate: [0, 15, -15, 0],
+            }}
+            transition={{
+              duration: Math.random() * 6 + 6,
+              repeat: Infinity,
+            }}
+          >
+            {decor}
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+};
+
+const AuroraBackground = () => (
+  <div className="fixed inset-0 z-[-1] overflow-hidden bg-pink-50 pointer-events-none">
+    <motion.div 
+      animate={{ x: [0, 50, 0], y: [0, 30, 0], scale: [1, 1.2, 1] }} 
+      transition={{ repeat: Infinity, duration: 10, ease: "linear" }} 
+      className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-pink-600/30 blur-[80px]" 
+    />
+    <motion.div 
+      animate={{ x: [0, -40, 0], y: [0, -20, 0], scale: [1, 1.5, 1] }} 
+      transition={{ repeat: Infinity, duration: 12, ease: "linear" }} 
+      className="absolute top-[20%] right-[-10%] w-[70vw] h-[70vw] rounded-full bg-pink-400/30 blur-[100px]" 
+    />
+    <motion.div 
+      animate={{ x: [0, 30, 0], y: [0, -40, 0], scale: [1, 1.3, 1] }} 
+      transition={{ repeat: Infinity, duration: 15, ease: "linear" }} 
+      className="absolute bottom-[-10%] left-[10%] w-[55vw] h-[55vw] rounded-full bg-orange-300/30 blur-[80px]" 
+    />
+  </div>
+);
+
 const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState('');
@@ -55,14 +106,15 @@ const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
   };
 
   return (
-    <div className="min-h-screen bg-aurora flex items-center justify-center p-4 relative transition-colors duration-1000">
+    <div className="min-h-screen flex items-center justify-center p-4 relative transition-colors duration-1000">
+      <AuroraBackground />
       <FloatingHearts />
 
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="bg-white p-8 rounded-3xl shadow-xl border border-pink-100 max-w-md w-full z-10 text-center"
+        className="bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-xl border border-pink-100 max-w-md w-full z-10 text-center"
       >
         <div className="flex justify-center mb-6">
           <motion.div
@@ -102,7 +154,7 @@ const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
 
           <button
             type="submit"
-            className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 rounded-xl transition-colors duration-300 shadow-md hover:shadow-lg"
+            className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 rounded-xl transition-colors duration-300 shadow-md hover:shadow-lg active:scale-95"
           >
             Masuk
           </button>
@@ -118,7 +170,8 @@ const bottomPhotos = Array.from({ length: 15 }).map((_, i) => `/foto/${i + 6}.jp
 const LoveExplosion = () => {
   const particles = Array.from({ length: 40 });
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-pink-100 overflow-hidden">
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <AuroraBackground />
       {particles.map((_, i) => {
         const angle = Math.random() * Math.PI * 2;
         const velocity = Math.random() * 40 + 20;
@@ -150,18 +203,91 @@ const LoveExplosion = () => {
   );
 };
 
+const FavoritePhotos = () => {
+  const [savedPhotos, setSavedPhotos] = useState<(string|null)[]>([null, null, null]);
+  const [tempPhotos, setTempPhotos] = useState<(string|null)[]>([null, null, null]);
+
+  useEffect(() => {
+    const d = localStorage.getItem('adibah_best_photos');
+    if (d) {
+      try {
+        const parsed = JSON.parse(d);
+        setSavedPhotos(parsed);
+        setTempPhotos(parsed);
+      } catch(e) {}
+    }
+  }, []);
+
+  const handleDrop = (e: any, index: number) => {
+    e.preventDefault();
+    const src = e.dataTransfer.getData('text/plain');
+    if (src) {
+      const newP = [...tempPhotos];
+      newP[index] = src;
+      setTempPhotos(newP);
+    }
+  };
+
+  const handleSave = () => {
+    setSavedPhotos(tempPhotos);
+    localStorage.setItem('adibah_best_photos', JSON.stringify(tempPhotos));
+  };
+
+  const handleCancel = () => {
+    setTempPhotos(savedPhotos);
+  };
+
+  const showButtons = JSON.stringify(tempPhotos) !== JSON.stringify(savedPhotos) && tempPhotos.every(p => p !== null);
+
+  return (
+    <div className="max-w-4xl mx-auto mt-16 mb-20 text-center px-4 relative z-20">
+      <h3 className="text-5xl font-bold text-pink-600 mb-10" style={{ fontFamily: "'Dancing Script', cursive", textShadow: "2px 2px 4px rgba(255,192,203,0.8)" }}>Foto Terbaik</h3>
+      <div className="flex flex-wrap justify-center gap-6">
+        {[0, 1, 2].map(idx => (
+          <div 
+            key={idx}
+            className="w-40 h-56 md:w-48 md:h-64 border-4 border-dashed border-pink-400 rounded-[2.5rem] flex flex-col items-center justify-center bg-white/40 backdrop-blur-sm relative overflow-hidden group shadow-[0_0_25px_rgba(236,72,153,0.4)] transition-all hover:scale-105"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => handleDrop(e, idx)}
+          >
+            {tempPhotos[idx] ? (
+               <img src={tempPhotos[idx]!} className="w-full h-full object-cover pointer-events-none" />
+            ) : (
+               <div className="text-pink-500 flex flex-col items-center p-4">
+                 <Heart size={36} className="mb-3 animate-pulse" />
+                 <span className="text-sm font-bold opacity-80 text-center leading-tight">Tarik fotomu<br/>ke sini</span>
+               </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {showButtons && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-10 flex justify-center gap-4">
+             <button onClick={handleSave} className="px-8 py-3 bg-pink-500 text-white rounded-full font-bold shadow-lg shadow-pink-300 hover:bg-pink-600 transition-colors active:scale-95">Simpan Foto</button>
+             <button onClick={handleCancel} className="px-8 py-3 bg-white text-pink-500 border border-pink-300 rounded-full font-bold shadow-lg hover:bg-pink-50 transition-colors active:scale-95">Cancel</button>
+          </motion.div>
+      )}
+    </div>
+  );
+};
+
 const NailongTapGame = () => {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'idle' | 'playing' | 'cracked' | 'won'>('idle');
   const [items, setItems] = useState<{ id: number; type: string; left: number }[]>([]);
-  const [explosions, setExplosions] = useState<{id: number, left: boolean}[]>([]);
+  const [explosions, setExplosions] = useState<{id: number, left: boolean, particles: {id: number, char: string}[]}[]>([]);
 
   const triggerTrumpet = (left: boolean) => {
     const id = Date.now();
-    setExplosions(prev => [...prev, { id, left }]);
+    const chars = ['✨', '🎉', '🌸', '🦋', '🎈', '💖'];
+    const particles = Array.from({length: 10}).map((_, i) => ({
+      id: i,
+      char: chars[Math.floor(Math.random() * chars.length)]
+    }));
+    setExplosions(prev => [...prev, { id, left, particles }]);
     setTimeout(() => {
       setExplosions(prev => prev.filter(e => e.id !== id));
-    }, 2000);
+    }, 2500);
   };
 
   // Spawn items
@@ -183,28 +309,23 @@ const NailongTapGame = () => {
             left: Math.random() * 80 + 10, // 10% to 90%
           },
         ]);
-      }, 600); // spawned every 600ms
+      }, 600);
     }
     return () => clearInterval(timer);
   }, [status]);
 
-  // Natural Drain removed per user request
-
   const startGame = () => {
     setStatus('playing');
-    setProgress(15); // Buffer start
+    setProgress(15);
   };
 
   const handleTapItem = (id: number, type: string) => {
     if (status !== 'playing') return;
-
-    // Remove tapped item immediately
     setItems((prev) => prev.filter((item) => item.id !== id));
-
     setProgress((prev) => {
       let next = prev;
       if (type === '💣') next -= 20;
-      else next += 12; // all lovely emotes give 12%
+      else next += 12; 
 
       if (next >= 100) {
         setStatus('won');
@@ -229,107 +350,118 @@ const NailongTapGame = () => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-white/60 backdrop-blur-md rounded-[3rem] p-6 shadow-xl border-4 border-pink-200 flex flex-col items-center gap-6 relative overflow-hidden my-16 h-[450px]">
-      
-      {/* Trumpet Decorations */}
-      <button onClick={() => triggerTrumpet(true)} className="absolute left-2 top-1/2 -translate-y-1/2 text-4xl z-30 hover:scale-125 transition-transform active:scale-90">🎉</button>
-      <button onClick={() => triggerTrumpet(false)} className="absolute right-2 top-1/2 -translate-y-1/2 text-4xl z-30 hover:scale-125 transition-transform active:scale-90" style={{ transform: 'translateY(-50%) scaleX(-1)' }}>🎉</button>
+    <div className="relative w-full max-w-5xl mx-auto flex items-center justify-center my-16 px-4">
+      {/* Trumpet Decorations Outside */}
+      <button onClick={() => triggerTrumpet(true)} className="absolute left-[-20px] md:left-4 top-1/2 -translate-y-1/2 text-7xl md:text-[6rem] z-30 hover:scale-110 transition-transform active:scale-95 drop-shadow-xl p-4">🎉</button>
+      <button onClick={() => triggerTrumpet(false)} className="absolute right-[-20px] md:right-4 top-1/2 -translate-y-1/2 text-7xl md:text-[6rem] z-30 hover:scale-110 transition-transform active:scale-95 drop-shadow-xl p-4" style={{ transform: 'translateY(-50%) scaleX(-1)' }}>🎉</button>
       
       {explosions.map(exp => (
-        <motion.div key={exp.id} className={`absolute top-1/2 -translate-y-1/2 z-20 text-3xl pointer-events-none ${exp.left ? 'left-10' : 'right-10'}`}
-          initial={{ scale: 0, opacity: 1 }}
-          animate={{
-            x: exp.left ? [0, 50, 100] : [0, -50, -100],
-            y: [0, -50, 50],
-            scale: [1, 2, 0],
-            opacity: [1, 1, 0]
-          }}
-          transition={{ duration: 1 }}
-        >
-          💖
-        </motion.div>
+        <div key={exp.id} className={`absolute top-1/2 -translate-y-1/2 z-20 pointer-events-none ${exp.left ? 'left-10 md:left-32' : 'right-10 md:right-32'}`}>
+           {exp.particles.map(p => {
+              const angle = Math.random() * Math.PI * 2;
+              const velocity = Math.random() * 80 + 40;
+              return (
+                 <motion.div
+                    key={p.id}
+                    className="absolute text-5xl"
+                    initial={{ x: 0, y: 0, opacity: 1, scale: 0 }}
+                    animate={{
+                       x: `${Math.cos(angle) * velocity}px`,
+                       y: `${Math.sin(angle) * velocity}px`,
+                       opacity: [1, 1, 0],
+                       scale: [0, Math.random() * 1.5 + 1, 0.5]
+                    }}
+                    transition={{ duration: 1.5 + Math.random(), ease: "easeOut" }}
+                 >
+                    {p.char}
+                 </motion.div>
+              );
+           })}
+        </div>
       ))}
 
-      <h3 className="text-3xl z-10 font-bold text-pink-600 text-center drop-shadow-sm mt-2" style={{ fontFamily: "'Dancing Script', cursive" }}>
-        Tangkap emot jangan bom
-      </h3>
-      <p className="text-xs text-pink-500 font-bold -mt-4 z-10 opacity-70">Hanya berkurang saat kena bom!</p>
+      <div className="w-full max-w-md bg-white/60 backdrop-blur-md rounded-[3rem] p-6 shadow-xl border-4 border-pink-200 flex flex-col items-center gap-6 relative overflow-hidden h-[450px]">
+        <h3 className="text-3xl z-10 font-bold text-pink-600 text-center drop-shadow-sm mt-2" style={{ fontFamily: "'Dancing Script', cursive" }}>
+          Tangkap emot jangan bom
+        </h3>
+        <p className="text-xs text-pink-500 font-bold -mt-4 z-10 opacity-70">Hanya berkurang saat kena bom!</p>
 
-      {/* Game Area Boundary */}
-      <div className="absolute inset-0 top-20 bottom-0 w-full overflow-hidden">
-        {status === 'playing' &&
-          items.map((item) => (
-            <motion.button
-              key={item.id}
-              onClick={() => handleTapItem(item.id, item.type)}
-              className="absolute text-5xl md:text-6xl cursor-pointer drop-shadow-md select-none z-20 hover:scale-110 active:scale-90 p-4"
-              style={{ top: 0, left: `${item.left}%`, WebkitTapHighlightColor: 'transparent' }}
-              initial={{ y: -100, rotate: -30 }}
-              animate={{ y: 600, rotate: 30 }}
-              transition={{ duration: 4.8, ease: 'linear' }}
-              onAnimationComplete={() => handleAnimationComplete(item.id)}
-            >
-              {item.type}
-            </motion.button>
-          ))}
-      </div>
-
-      {/* Pre-Game State */}
-      {status === 'idle' && (
-        <motion.button
-          onClick={startGame}
-          className="z-30 m-auto px-8 py-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full font-bold shadow-lg shadow-pink-300 animate-bounce"
-        >
-          Mulai Main!
-        </motion.button>
-      )}
-
-      {/* Post-Game States */}
-      {(status === 'cracked' || status === 'won') && (
-        <div className="absolute inset-0 z-30 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
-          {status === 'won' ? (
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1.2 }} className="text-8xl drop-shadow-xl">
-              💕
-            </motion.div>
-          ) : (
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1, rotate: [0, -10, 10, 0] }} className="text-8xl drop-shadow-lg">
-              💔
-            </motion.div>
-          )}
-          <p className="font-bold text-pink-600 mt-6 text-xl tracking-wide max-w-[80%] text-center leading-snug">
-            {status === 'won' ? 'Cinta Penuh! Luar Biasa!' : 'Yah hatinya bocor... Fokus lagi!'}
-          </p>
-          {status === 'won' && (
-            <button
-              onClick={() => {
-                setStatus('idle');
-                setProgress(0);
-              }}
-              className="mt-8 px-6 py-3 bg-pink-500 text-white rounded-full shadow-md font-bold hover:bg-pink-600 shadow-pink-300 transition-all hover:scale-105"
-            >
-              Main Lagi
-            </button>
-          )}
+        {/* Game Area Boundary */}
+        <div className="absolute inset-0 top-20 bottom-0 w-full overflow-hidden">
+          {status === 'playing' &&
+            items.map((item) => (
+              <motion.button
+                key={item.id}
+                onClick={() => handleTapItem(item.id, item.type)}
+                className="absolute text-5xl md:text-6xl cursor-pointer drop-shadow-md select-none z-20 hover:scale-110 active:scale-90 p-4"
+                style={{ top: 0, left: `${item.left}%`, WebkitTapHighlightColor: 'transparent' }}
+                initial={{ y: -100, rotate: -30 }}
+                animate={{ y: 600, rotate: 30 }}
+                transition={{ duration: 4.8, ease: 'linear' }}
+                onAnimationComplete={() => handleAnimationComplete(item.id)}
+              >
+                {item.type}
+              </motion.button>
+            ))}
         </div>
-      )}
 
-      {/* Visualizer: Two Hearts Fill System */}
-      {status !== 'won' && status !== 'cracked' && status !== 'idle' && (
-        <div className="z-10 mt-auto mb-2 relative flex items-center justify-center flex-col">
-          <div className="flex gap-4 text-pink-200">
-            <Heart size={72} strokeWidth={2.5} />
-            <Heart size={72} strokeWidth={2.5} />
-          </div>
-          <div
-            className="absolute top-0 flex gap-4 text-pink-500 drop-shadow-md"
-            style={{ clipPath: `inset(calc(100% - ${progress}%) 0 0 0)`, transition: 'clip-path 0.3s ease-out' }}
+        {/* Pre-Game State */}
+        {status === 'idle' && (
+          <motion.button
+            onClick={startGame}
+            className="z-30 m-auto px-8 py-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full font-bold shadow-lg shadow-pink-300 animate-bounce cursor-pointer active:scale-95"
           >
-            <Heart size={72} strokeWidth={2.5} fill="currentColor" />
-            <Heart size={72} strokeWidth={2.5} fill="currentColor" />
+            Mulai Main!
+          </motion.button>
+        )}
+
+        {/* Post-Game States */}
+        {(status === 'cracked' || status === 'won') && (
+          <div className="absolute inset-0 z-30 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
+            {status === 'won' ? (
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1.2 }} className="text-8xl drop-shadow-xl">
+                💕
+              </motion.div>
+            ) : (
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1, rotate: [0, -10, 10, 0] }} className="text-8xl drop-shadow-lg">
+                💔
+              </motion.div>
+            )}
+            <p className="font-bold text-pink-600 mt-6 text-xl tracking-wide max-w-[80%] text-center leading-snug">
+              {status === 'won' ? 'Cinta Penuh! Luar Biasa!' : 'Yah hatinya bocor... Fokus lagi!'}
+            </p>
+            {status === 'won' && (
+              <button
+                onClick={() => {
+                  setStatus('idle');
+                  setProgress(0);
+                }}
+                className="mt-8 px-6 py-3 bg-pink-500 text-white rounded-full shadow-md font-bold hover:bg-pink-600 shadow-pink-300 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                Main Lagi
+              </button>
+            )}
           </div>
-          <div className="mt-2 font-bold text-sm text-pink-400 bg-white/40 px-3 py-1 rounded-full shadow-sm">{Math.floor(progress)}%</div>
-        </div>
-      )}
+        )}
+
+        {/* Visualizer: Two Hearts Fill System */}
+        {status !== 'won' && status !== 'cracked' && status !== 'idle' && (
+          <div className="z-10 mt-auto mb-2 relative flex items-center justify-center flex-col">
+            <div className="flex gap-4 text-pink-200">
+              <Heart size={72} strokeWidth={2.5} />
+              <Heart size={72} strokeWidth={2.5} />
+            </div>
+            <div
+              className="absolute top-0 flex gap-4 text-pink-500 drop-shadow-md"
+              style={{ clipPath: `inset(calc(100% - ${progress}%) 0 0 0)`, transition: 'clip-path 0.3s ease-out' }}
+            >
+              <Heart size={72} strokeWidth={2.5} fill="currentColor" />
+              <Heart size={72} strokeWidth={2.5} fill="currentColor" />
+            </div>
+            <div className="mt-2 font-bold text-sm text-pink-400 bg-white/40 px-3 py-1 rounded-full shadow-sm">{Math.floor(progress)}%</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -387,7 +519,6 @@ const SpecialMessages = () => {
     const timeString = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' }) + ' - ' + new Date().toLocaleDateString('id-ID');
 
     try {
-      // Kirim rahasia ke Email via FormSubmit
       await fetch("https://formsubmit.co/ajax/ak123k09@gmail.com", {
         method: "POST",
         headers: { 
@@ -403,7 +534,6 @@ const SpecialMessages = () => {
         })
       });
 
-      // Tetap simpan secara lokal agar pengirim bisa melihat riwayat pesannya
       const newMsg = {
         id: Date.now(),
         type: box.type,
@@ -424,10 +554,11 @@ const SpecialMessages = () => {
       setIsSending(false);
     }
   };
+
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 pb-32 pt-16">
+    <div className="w-full max-w-5xl mx-auto px-4 pb-32 pt-16 relative z-10">
       <div className="text-center mb-12">
-        <h3 className="text-4xl font-bold text-pink-600 drop-shadow-sm mb-4" style={{ fontFamily: "'Dancing Script', cursive", textShadow: "2px 2px 4px rgba(255,192,203,0.6)" }}>
+        <h3 className="text-5xl font-bold text-pink-600 drop-shadow-sm mb-4" style={{ fontFamily: "'Dancing Script', cursive", textShadow: "2px 2px 4px rgba(255,192,203,0.6)" }}>
           Kotak Surat Rahasia 💌
         </h3>
         <p className="text-pink-500 font-medium opacity-80 max-w-xl mx-auto">
@@ -490,7 +621,7 @@ const SpecialMessages = () => {
 
       {sentMessages.length > 0 && (
          <div className="mt-16">
-            <h4 className="text-3xl font-bold text-pink-600 text-center mb-8 drop-shadow-sm" style={{ fontFamily: "'Dancing Script', cursive" }}>Riwayat Pesanmu</h4>
+            <h4 className="text-4xl font-bold text-pink-600 text-center mb-8 drop-shadow-sm" style={{ fontFamily: "'Dancing Script', cursive" }}>Riwayat Pesanmu</h4>
             <div className="flex flex-col gap-4 max-w-2xl mx-auto">
                {sentMessages.map((msg) => (
                   <motion.div 
@@ -501,7 +632,7 @@ const SpecialMessages = () => {
                   >
                      <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-pink-100 to-transparent opacity-50 rounded-bl-3xl"></div>
                      <div className="text-4xl drop-shadow-sm">{msg.icon}</div>
-                     <div className="flex-1 min-w-0">
+                     <div className="flex-1 min-w-0 z-10">
                         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-1 border-b border-gray-100 pb-2">
                            <h5 className="font-bold text-slate-800 text-lg">{msg.type} Message</h5>
                            <span className="text-xs text-slate-400 font-semibold">{msg.time}</span>
@@ -564,22 +695,20 @@ const MainScreen = () => {
     }
   };
 
-
-
-  // Interesting shapes array for the bottom photos
   const shapes = [
-    { container: "rounded-3xl border-4 border-pink-200", img: "rounded-2xl" }, // Soft rectangle
-    { container: "rounded-full aspect-square border-8 border-white", img: "rounded-full aspect-square" }, // Circle
-    { container: "rounded-tr-[50%] rounded-bl-[50%] rounded-tl-xl rounded-br-xl border-4 border-pink-300 bg-white p-2", img: "rounded-tr-[50%] rounded-bl-[50%] rounded-tl-lg rounded-br-lg" }, // Leaf-like shape
-    { container: "rounded-t-full rounded-b-2xl border-[6px] border-white aspect-[3/4]", img: "rounded-t-full rounded-b-[14px] w-full h-full" }, // Arch shape
-    { container: "rounded-[3rem] border-[10px] border-pink-100 bg-white p-2", img: "rounded-[2.5rem]" }, // Puffy
+    { container: "rounded-3xl border-4 border-pink-200", img: "rounded-2xl" }, 
+    { container: "rounded-full aspect-square border-8 border-white", img: "rounded-full aspect-square" }, 
+    { container: "rounded-tr-[50%] rounded-bl-[50%] rounded-tl-xl rounded-br-xl border-4 border-pink-300 bg-white p-2", img: "rounded-tr-[50%] rounded-bl-[50%] rounded-tl-lg rounded-br-lg" }, 
+    { container: "rounded-t-full rounded-b-2xl border-[6px] border-white aspect-[3/4]", img: "rounded-t-full rounded-b-[14px] w-full h-full" }, 
+    { container: "rounded-[3rem] border-[10px] border-pink-100 bg-white p-2", img: "rounded-[2.5rem]" }, 
   ];
 
   return (
-    <div className={`bg-aurora text-pink-900 font-sans relative overflow-x-hidden transition-colors duration-1000 ${scene > 0 ? '' : 'h-screen overflow-hidden'}`}>
+    <div className={`text-pink-900 font-sans relative overflow-x-hidden min-h-screen transition-colors duration-1000 ${scene > 0 ? '' : 'h-screen overflow-hidden'}`}>
+      <AuroraBackground />
+      <RomanticDecorations />
       <FloatingHearts />
 
-      {/* Background Audio */}
       <audio 
         ref={audioRef} 
         src="/music/videoplayback.m4a" 
@@ -587,27 +716,22 @@ const MainScreen = () => {
         onTimeUpdate={handleTimeUpdate} 
       />
 
-      {/* Floating Music Controller */}
       <button
         onClick={toggleAudio}
-        className="fixed bottom-6 right-6 bg-pink-500 hover:bg-pink-600 text-white p-4 rounded-full shadow-xl z-50 transition-all hover:scale-110"
+        className="fixed bottom-6 right-6 bg-pink-500 hover:bg-pink-600 text-white p-4 rounded-full shadow-xl z-50 transition-all hover:scale-110 active:scale-90"
         title={isPlaying ? "Jeda Lagu" : "Putar Lagu"}
       >
-        <Music size={24} className={isPlaying ? "animate-pulse" : "opacity-50"} />
+        {isPlaying ? <Pause size={24} /> : <Play size={24} />}
       </button>
 
-      {/* SCENE 0: Love Explosion Intro */}
       <div className={`fixed inset-0 z-40 transition-opacity duration-1000 ease-in-out pointer-events-none ${scene === 0 ? 'opacity-100' : 'opacity-0'}`}>
         {scene === 0 && <LoveExplosion />}
       </div>
 
-      {/* SCENE 1: Scrollable Page */}
       <div className={`relative z-10 transition-opacity duration-1000 ${scene > 0 ? 'opacity-100' : 'opacity-0'}`}>
         
-        {/* Top Section: First photos mixed shapes + cute characters */}
-        <div className="min-h-[90vh] flex flex-col items-center justify-center pt-20 px-4 relative">
+        <div className="min-h-[90vh] flex flex-col items-center justify-center pt-20 px-4 relative z-20">
           
-          {/* Animated Cute Characters */}
           {[
             { char: "🐰", left: "10%", top: "15%", delay: 0 },
             { char: "🌸", left: "85%", top: "20%", delay: 0.5 },
@@ -651,47 +775,51 @@ const MainScreen = () => {
                   whileHover={{ scale: 1.05, rotate: index % 2 === 0 ? 3 : -3 }}
                   whileTap={{ scale: 0.95, y: 5, rotate: 0 }}
                   onClick={() => handleDownload(src)}
-                  className={`relative overflow-hidden shadow-xl w-48 h-56 md:w-64 md:h-80 cursor-pointer ${style.container}`}
+                  className={`relative overflow-hidden shadow-xl w-48 h-56 md:w-64 md:h-80 cursor-grab active:cursor-grabbing ${style.container}`}
+                  draggable
+                  onDragStart={(e: any) => {
+                    e.dataTransfer.setData('text/plain', src);
+                  }}
                 >
                   <img
                     src={src}
                     alt={`Varied Top ${index}`}
                     className={`w-full h-full object-cover ${style.img}`}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 bg-pink-500/20 mix-blend-overlay"></div>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 bg-pink-500/20 mix-blend-overlay pointer-events-none"></div>
                 </motion.div>
               )
             })}
           </div>
         </div>
 
-        {/* Large Scroll Space */}
-        <div className="h-[60vh] flex items-center justify-center opacity-50 flex-col gap-4 text-pink-400">
+        <div className="h-[60vh] flex items-center justify-center opacity-50 flex-col gap-4 text-pink-500 pointer-events-none">
           <motion.div
             animate={{ y: [0, 10, 0] }}
             transition={{ repeat: Infinity, duration: 2 }}
+            className="font-bold tracking-widest text-lg"
           >
             Geser Ke Bawah
           </motion.div>
           <div className="w-[2px] h-32 bg-gradient-to-b from-pink-400 to-transparent"></div>
         </div>
 
-        {/* Middle Text Area */}
-        <div className="text-center px-4 mb-24">
+        <div className="text-center px-4 mb-24 relative z-10">
           <motion.h2 
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 1.5, ease: "easeOut" }}
-            className="text-5xl md:text-7xl lg:text-8xl font-bold text-pink-600 drop-shadow-md mx-auto max-w-4xl leading-tight" 
-            style={{ fontFamily: "'Dancing Script', cursive", textShadow: "3px 3px 6px rgba(255,192,203,0.8)" }}
+            className="text-6xl md:text-8xl font-bold text-pink-600 drop-shadow-lg mx-auto max-w-5xl leading-tight" 
+            style={{ fontFamily: "'Dancing Script', cursive", textShadow: "3px 3px 8px rgba(255,192,203,0.9)" }}
           >
             Hal terindah yang pernah kutemukan
           </motion.h2>
         </div>
 
-        {/* Bottom Section: Varied Shapes */}
-        <div className="max-w-6xl mx-auto px-4 pb-32">
+        <FavoritePhotos />
+
+        <div className="max-w-6xl mx-auto px-4 pb-32 relative z-10">
           <div className="columns-2 md:columns-3 lg:columns-4 gap-6 space-y-6">
             {bottomPhotos.map((src, index) => {
               const style = shapes[index % shapes.length];
@@ -712,17 +840,15 @@ const MainScreen = () => {
                     alt={`Varied ${index}`}
                     className={`w-full h-full object-cover ${style.img}`}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 bg-pink-500/20 mix-blend-overlay"></div>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 bg-pink-500/20 mix-blend-overlay pointer-events-none"></div>
                 </motion.div>
               );
             })}
           </div>
         </div>
         
-        {/* Playful Games Section Bottom */}
         <NailongTapGame />
         
-        {/* Surat Pesan Khusus Setelah Games */}
         <SpecialMessages />
         
       </div>
